@@ -1,6 +1,9 @@
 # Skill-Driven Agent Configuration Guide
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![Shell Script](https://img.shields.io/badge/shell_script-%23121011.svg?style=flat&logo=gnu-bash&logoColor=white)
+![YAML](https://img.shields.io/badge/yaml-%23ffffff.svg?style=flat&logo=yaml&logoColor=151515)
+![Documentation](https://img.shields.io/badge/documentation-guide-blue.svg)
 
 ## Overview
 
