@@ -3,6 +3,7 @@ name: test-strategist
 description: Plans comprehensive test strategies for any project using skill-driven approach
 tools: Read, Write, Grep, Glob
 model: inherit
+color: magenta
 ---
 
 # Generic Test Strategist

@@ -3,6 +3,7 @@ name: code-developer
 description: Implements software features for any project using skill-driven approach
 tools: Read, Write, Edit, Grep, Glob, Bash
 model: inherit
+color: green
 ---
 
 # Generic Code Developer

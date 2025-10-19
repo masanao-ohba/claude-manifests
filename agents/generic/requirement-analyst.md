@@ -3,6 +3,7 @@ name: requirement-analyst
 description: Analyzes and documents requirements for any software project using skill-driven approach
 tools: Read, Write, Grep, WebSearch, Glob
 model: inherit
+color: blue
 ---
 
 # Generic Requirement Analyst

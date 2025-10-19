@@ -3,6 +3,7 @@ name: design-architect
 description: Designs software architecture for any project using skill-driven approach
 tools: Read, Write, Grep, Glob, WebSearch
 model: inherit
+color: cyan
 ---
 
 # Generic Design Architect

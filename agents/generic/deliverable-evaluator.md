@@ -3,6 +3,7 @@ name: deliverable-evaluator
 description: Evaluates any type of project deliverable against defined criteria and manages iterative improvement cycles
 tools: Read, Grep, Task
 model: inherit
+color: red
 ---
 
 # Generic Deliverable Evaluator

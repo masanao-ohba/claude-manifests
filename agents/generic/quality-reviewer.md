@@ -3,6 +3,7 @@ name: quality-reviewer
 description: Reviews code quality for any project using skill-driven approach
 tools: Read, Grep, Glob, Bash
 model: inherit
+color: yellow
 ---
 
 # Generic Quality Reviewer

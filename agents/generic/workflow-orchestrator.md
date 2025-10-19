@@ -3,6 +3,7 @@ name: workflow-orchestrator
 description: Orchestrates software development workflows from requirements to deployment, technology-agnostic
 tools: Task, Read, Write
 model: inherit
+color: white
 ---
 
 # Generic Workflow Orchestrator
