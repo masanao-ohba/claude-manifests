@@ -5,6 +5,21 @@
 ![YAML](https://img.shields.io/badge/yaml-%23ffffff.svg?style=flat&logo=yaml&logoColor=151515)
 ![Documentation](https://img.shields.io/badge/documentation-guide-blue.svg)
 
+## Table of Contents
+
+- [Overview](#overview)
+- [1. Responsibility Definition](#1-responsibility-definition)
+- [2. Skill-Driven Architecture Mechanism](#2-skill-driven-architecture-mechanism)
+- [3. CLAUDE.md Configuration Definition](#3-claudemd-configuration-definition)
+- [4. config.yaml Configuration Definition](#4-configyaml-configuration-definition)
+- [5. Configuration Examples](#5-configuration-examples)
+- [6. Common Mistakes and Fixes](#6-common-mistakes-and-fixes)
+- [7. Troubleshooting](#7-troubleshooting)
+- [8. Validation Checklist](#8-validation-checklist)
+- [9. Decision Flowcharts](#9-decision-flowcharts)
+- [10. Summary](#10-summary)
+- [Appendix: Complete config.yaml Template](#appendix-complete-configyaml-template)
+
 ## Overview
 
 This guide defines how to configure `~/.claude/agents`, `~/.claude/skills`, `.claude/config.yaml`, and `CLAUDE.md`, along with their respective areas of responsibility.
