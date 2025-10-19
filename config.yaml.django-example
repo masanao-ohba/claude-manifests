@@ -1,0 +1,444 @@
+# .claude/config.yaml - Content Management API Configuration
+
+# ============================================================================
+# Repository Metadata
+# ============================================================================
+repo_metadata:
+  name: content-api
+  type: rest-api
+  description: Django REST Framework content management microservice
+
+  tech_stack:
+    language: Python
+    language_version: "3.11"
+    framework: Django
+    framework_version: "4.2"
+    test_framework: pytest
+    test_framework_version: "7.4"
+
+  # Additional frameworks/libraries
+  additional_frameworks:
+    - name: Django REST Framework
+      version: "3.14"
+    - name: Celery
+      version: "5.3"
+    - name: Redis
+      version: "4.5"
+
+  # Microservice context
+  repository_group: content-platform
+  repository_role: api-service
+
+# ============================================================================
+# Agent-Skill Assignments (Generic Agents)
+# ============================================================================
+agent_skills:
+  # Workflow orchestration
+  workflow-orchestrator:
+    - generic/workflow-patterns
+
+  # Requirements analysis
+  requirement-analyst:
+    - generic/requirement-analyzer
+    - python/requirement-patterns
+    - python-django/requirement-analyzer
+
+  # Software design and architecture
+  design-architect:
+    - generic/software-designer
+    - python/architectural-patterns      # Python design patterns
+    - python-django/functional-designer  # Django MVT patterns
+    - python-django/database-designer    # Django ORM/migrations
+    - python-django/api-designer         # DRF API design patterns
+
+  # Test strategy and planning
+  test-strategist:
+    - generic/test-planner
+    - python/testing-standards           # pytest best practices
+    - python-django/test-case-designer   # Django test patterns
+
+  # Code implementation
+  code-developer:
+    - generic/code-implementer
+    - python/coding-standards            # PEP-8, PEP-257
+    - python/security-patterns           # OWASP for Python
+    - python-django/code-implementer     # Django conventions
+    - python-django/drf-implementer      # DRF best practices
+
+  # Quality review (handles all validation use cases)
+  quality-reviewer:
+    - generic/code-reviewer
+    - python/coding-standards            # PEP-8 compliance
+    - python/security-patterns           # Security audit
+    - python-django/code-reviewer        # Django best practices
+    - python-django/drf-reviewer         # DRF patterns validation
+    - python-django/test-validator       # Test quality validation
+    - python-django/migration-checker    # Migration validation
+    - python-django/openapi-validator    # API contract validation
+    - python-django/performance-tester   # Performance/SLA validation
+
+  # Deliverable evaluation
+  deliverable-evaluator:
+    - generic/evaluation-criteria
+    - python-django/deliverable-criteria
+
+# ============================================================================
+# Technology-Specific Agents (Rarely Needed)
+# ============================================================================
+# NOTE: Generic agents + skills handle 99%+ of use cases.
+# Only create tech-specific agents for truly framework-unique workflows.
+agents: {}
+
+# ============================================================================
+# Database Configuration
+# ============================================================================
+database:
+  architecture: single-database
+  engine: PostgreSQL
+  version: "14"
+
+  # Connection settings
+  connections:
+    default:
+      max_connections: 100
+      conn_max_age: 600
+      pool_size: 20
+
+  # Migration configuration
+  migration_paths:
+    app_migrations: "*/migrations/"
+
+  # Database optimization
+  indexing:
+    auto_index_foreign_keys: true
+    monitor_slow_queries: true
+    slow_query_threshold: 100  # milliseconds
+
+# ============================================================================
+# Test Configuration
+# ============================================================================
+test:
+  # Test execution settings
+  test_runner: pytest
+  pytest_options:
+    - "--verbose"
+    - "--strict-markers"
+    - "--tb=short"
+    - "--cov=."
+    - "--cov-report=term-missing"
+    - "--cov-report=html"
+
+  # Test database
+  database:
+    name_template: "test_%s"
+    keep_database: false
+    parallel: true
+    parallel_workers: 4
+
+  # Test organization
+  test_paths:
+    unit: tests/unit/
+    integration: tests/integration/
+    e2e: tests/e2e/
+    performance: tests/performance/
+
+  # Coverage requirements
+  coverage:
+    minimum: 85
+    exclude:
+      - "*/tests/*"
+      - "*/migrations/*"
+      - "*/settings/*"
+      - "*/wsgi.py"
+      - "*/asgi.py"
+
+  # Factory configuration
+  factories:
+    library: factory_boy
+    base_path: tests/factories.py
+
+  # Mocking configuration
+  mocking:
+    external_services:
+      library: responses
+      require_mocking: true
+      unmocked_requests: error
+
+  # Performance benchmarks
+  performance:
+    max_test_duration: 900  # 15 minutes for full suite
+    slow_test_threshold: 2  # Warn if single test > 2 seconds
+
+# ============================================================================
+# File Path Configuration
+# ============================================================================
+paths:
+  # Application structure
+  apps: apps/
+  models: "*/models.py"
+  views: "*/views.py"
+  serializers: "*/serializers.py"
+  urls: "*/urls.py"
+  migrations: "*/migrations/"
+
+  # Test structure
+  tests: tests/
+  fixtures: tests/fixtures/  # Factory definitions, not JSON fixtures
+  factories: tests/factories.py
+
+  # Configuration
+  settings: config/settings/
+  urls_root: config/urls.py
+
+  # API documentation
+  api_docs: docs/api/
+  openapi_spec: docs/openapi.yaml
+
+# ============================================================================
+# Multi-Repository Dependencies
+# ============================================================================
+dependencies:
+  # Microservices this service depends on
+  depends_on:
+    - repository: auth-service
+      type: http-api
+      endpoint: "https://auth-service.internal/api/"
+      description: Authentication and authorization
+
+    - repository: media-service
+      type: http-api
+      endpoint: "https://media-service.internal/api/"
+      description: Media file processing and storage
+
+  # Shared libraries
+  shared_libraries:
+    - repository: common-models
+      type: python-package
+      version: "^1.2"
+      description: Shared Django models
+
+    - repository: api-client
+      type: python-package
+      version: "^2.0"
+      description: Internal API client
+
+    - repository: event-bus
+      type: python-package
+      version: "^1.5"
+      description: Event-driven messaging
+
+  # Services that consume this API
+  referenced_by:
+    - repository: media-service
+      description: Subscribes to content events
+
+    - repository: search-service
+      description: Indexes content for search
+
+# ============================================================================
+# Code Quality Standards
+# ============================================================================
+quality:
+  # Type checking
+  mypy:
+    enabled: true
+    strict: true
+    python_version: "3.11"
+    ignore_missing_imports: false
+
+  # Linting
+  ruff:
+    enabled: true
+    line_length: 100
+    select:
+      - E   # pycodestyle errors
+      - W   # pycodestyle warnings
+      - F   # pyflakes
+      - I   # isort
+      - N   # pep8-naming
+      - B   # flake8-bugbear
+    ignore:
+      - E501  # Line too long (handled by formatter)
+
+  # Code formatting
+  black:
+    enabled: true
+    line_length: 100
+    target_version: py311
+
+  # Security scanning
+  security:
+    enabled: true
+    tools:
+      - bandit  # Python security linter
+      - safety  # Dependency vulnerability checker
+
+  # Import sorting
+  isort:
+    enabled: true
+    profile: black
+    line_length: 100
+
+# ============================================================================
+# API Configuration
+# ============================================================================
+api:
+  # Versioning
+  versioning:
+    scheme: url_path
+    default_version: v2
+    allowed_versions:
+      - v1
+      - v2
+
+  # Pagination
+  pagination:
+    default_page_size: 20
+    max_page_size: 100
+
+  # Rate limiting
+  rate_limiting:
+    enabled: true
+    default_rate: "1000/hour"
+    burst_rate: "100/minute"
+
+  # Authentication
+  authentication:
+    methods:
+      - JWT
+      - OAuth2
+    token_expiry: 3600  # 1 hour
+
+# ============================================================================
+# Celery Configuration (Async Tasks)
+# ============================================================================
+celery:
+  broker: redis://localhost:6379/0
+  result_backend: redis://localhost:6379/0
+
+  # Task routing
+  task_routes:
+    - pattern: "*.upload_*"
+      queue: media
+    - pattern: "*.index_*"
+      queue: search
+    - pattern: "*"
+      queue: default
+
+  # Task time limits
+  task_time_limits:
+    soft: 300   # 5 minutes
+    hard: 600   # 10 minutes
+
+# ============================================================================
+# Deployment Configuration
+# ============================================================================
+deployment:
+  strategy: rolling
+  environments:
+    - development
+    - staging
+    - production
+
+  # Container configuration
+  container:
+    platform: docker
+    base_image: "python:3.11-slim"
+    wsgi_server: gunicorn
+    workers: 4
+
+  # Health checks
+  health_checks:
+    liveness: /health/live/
+    readiness: /health/ready/
+
+  # Pre-deployment checks
+  pre_deploy_checks:
+    - run_tests: true
+    - migration_dry_run: true
+    - security_scan: true
+    - mypy_check: true
+    - openapi_validation: true
+    - performance_test: false  # Only in staging
+
+# ============================================================================
+# Monitoring and Logging
+# ============================================================================
+monitoring:
+  # Application performance monitoring
+  apm:
+    enabled: true
+    service_name: content-api
+    environment: production
+
+  # Logging
+  logging:
+    level: INFO
+    format: json
+    handlers:
+      - console
+      - file
+
+  # Metrics
+  metrics:
+    enabled: true
+    collectors:
+      - prometheus
+    custom_metrics:
+      - content_created_total
+      - content_published_total
+      - api_latency_seconds
+
+# ============================================================================
+# Output Configuration
+# ============================================================================
+output:
+  language: english  # All documentation in English
+  code_style: pep8   # PEP-8 compliant
+
+# ============================================================================
+# Custom Hooks
+# ============================================================================
+hooks:
+  # Pre-commit validation
+  pre_commit:
+    - quality-reviewer         # Validates tests, migrations, API contracts, and code quality
+    - ruff                     # Linting
+    - black                    # Format check
+    - mypy                     # Type checking
+
+  # Pre-merge validation
+  pre_merge:
+    - quality-reviewer         # Final comprehensive review (includes performance/SLA validation)
+
+# ============================================================================
+# Documentation
+# ============================================================================
+documentation:
+  readme: README.md
+  claude_md: CLAUDE.md
+  api_docs: docs/api/
+  architecture: docs/architecture/
+  runbook: docs/runbook.md
+  openapi: docs/openapi.yaml
+
+# ============================================================================
+# Team Configuration
+# ============================================================================
+team:
+  size: 12
+  structure:
+    - team: Core API
+      members: 4
+    - team: Integrations
+      members: 3
+    - team: Infrastructure
+      members: 3
+    - team: QA
+      members: 2
+
+  code_review:
+    min_approvals: 2
+    require_tests: true
+    require_api_owner_approval: true  # For API changes
+    require_documentation: true
