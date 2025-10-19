@@ -1,5 +1,7 @@
 # Skill-Driven Agent Configuration Guide
 
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+
 ## Overview
 
 This guide defines how to configure `~/.claude/agents`, `~/.claude/skills`, `.claude/config.yaml`, and `CLAUDE.md`, along with their respective areas of responsibility.
