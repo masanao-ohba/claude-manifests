@@ -1,0 +1,296 @@
+# Claude Code Configuration for dotfiles repository
+# This file configures Claude Code's behavior for this project
+
+# Output language for all generated content
+output:
+  language: en # English for code, comments, and documentation
+  comment_style: descriptive # Descriptive, meaningful comments
+
+# Project metadata
+project:
+  name: "Personal Dotfiles Repository"
+  type: "configuration-management"
+  tech_stack:
+    shell:
+      - Bash
+      - Zsh
+    tools:
+      - GNU Stow
+      - Git Submodules
+      - Homebrew
+    configurations:
+      - Neovim
+      - Wezterm
+      - Starship
+      - Yabai
+      - SKHD
+
+# Development workflow
+workflow:
+  documentation:
+    knowledge_base: ".work/"
+    structure:
+      design: ".work/design.yaml"
+      architecture: ".work/structure.yaml"
+      issues: ".work/issue-solutions.yaml"
+      methodology: ".work/methodology.yaml"
+      temporary: ".work/issues/{YYYY-MM-DD-name}/"
+
+    update_triggers:
+      design.yaml:
+        - "New configuration requirements added"
+        - "Existing configuration specifications changed"
+        - "Installation or setup changes"
+      structure.yaml:
+        - "Architecture or component changes"
+        - "New submodules added"
+        - "File structure reorganization"
+      issue-solutions.yaml:
+        - "Configuration issue resolved with reusable pattern"
+        - "Common problem identified and solved"
+        - "Prevention technique discovered"
+
+    workflow_guidelines:
+      - "Before starting work: Read relevant .work/*.yaml files"
+      - "During investigation: Use .work/issues/{date-name}/ for temporary notes"
+      - "After resolution: Extract patterns to permanent .yaml files"
+      - "After extraction: Delete temporary issue directory"
+      - "Keep YAML files current state only - no history, no speculation"
+
+  commit_strategy:
+    message_format: "conventional"
+    examples:
+      - "feat: Add new configuration for tool X"
+      - "fix: Resolve symbolic link issue"
+      - "refactor: Reorganize configuration structure"
+      - "docs: Update .work/design.yaml with new setup steps"
+      - "chore: Update submodule references"
+
+# Git configuration
+git:
+  claude_signature: false  # Do not include Claude Code signature in commits
+  allow_push: false  # Do not automatically push commits to remote
+
+# Code style and conventions
+code_style:
+  general:
+    - "Remove trailing whitespace"
+    - "Use clear, descriptive variable names"
+    - "Prefer explicit over implicit"
+    - "Document complex logic with comments"
+
+  shell_scripts:
+    - "Use #!/usr/bin/env bash for portability"
+    - "Follow shellcheck recommendations"
+    - "Use functions for reusable logic"
+    - "Add error handling with set -e"
+
+# Error handling and fallback policy
+error_handling:
+  critical_rule: "NO fallback mechanisms unless explicitly specified in requirements"
+
+  prohibited_patterns:
+    - "Silent error handling with default values"
+    - "Automatic failover that masks issues"
+    - "Ignoring command failures"
+
+  acceptable_patterns:
+    - "User-facing error messages with clear instructions"
+    - "Graceful degradation with explicit user notification"
+    - "Critical failures with documented fallback in requirements"
+
+  debugging_approach:
+    - "Explicit errors expose problems immediately"
+    - "Remove fallbacks to reveal root causes"
+    - "Log all errors with context"
+    - "Never suppress exceptions silently"
+
+# Submodule management
+submodules:
+  update_command: "git submodule update --remote --merge"
+  sync_command: "git submodule sync"
+  init_command: "git submodule update --init --recursive"
+
+  tracked_modules:
+    - zsh
+    - .config/nvim
+    - .config/wezterm
+    - .config/starship
+    - .config/yabai
+    - .config/skhd
+    - brew
+
+# Stow operations
+stow:
+  common_commands:
+    link: "stow {directory}"
+    unlink: "stow -D {directory}"
+    relink: "stow -R {directory}"
+    config_link: "cd .config && stow {config-name} -t $HOME/.config"
+
+# Agent-Skill Assignments (Skill-Driven Architecture)
+# Each agent loads skills from configuration to adapt to tech stack
+agent_skills:
+  # Universal workflow orchestrator (tech-agnostic)
+  workflow-orchestrator:
+    - generic/workflow-patterns
+    - generic/git-commit-manager        # Git commit conventions
+
+  # Requirement analysis agent
+  requirement-analyst:
+    - generic/requirement-analyzer      # MoSCoW, SMART patterns
+    - shell/requirement-patterns        # Shell script requirements
+
+  # Design architecture agent
+  design-architect:
+    - generic/software-designer         # SOLID, design patterns
+    - shell/architectural-patterns      # Shell script design patterns
+
+  # Test strategy planning agent
+  test-strategist:
+    - generic/test-planner              # Test pyramid, AAA pattern
+    - shell/testing-standards           # Shell script testing (bats, etc.)
+
+  # Code implementation agent
+  code-developer:
+    - generic/code-implementer          # SOLID, DRY, KISS
+    - generic/git-commit-manager        # Git commit conventions
+    - shell/coding-standards            # Shellcheck, best practices
+    - shell/security-patterns           # Shell security best practices
+
+  # Code quality review agent
+  quality-reviewer:
+    - generic/code-reviewer             # SOLID, design patterns review
+    - generic/git-commit-manager        # Git commit conventions
+    - shell/coding-standards            # Shellcheck compliance
+    - shell/security-patterns           # Security vulnerability scan
+
+  # Deliverable evaluation agent
+  deliverable-evaluator:
+    - generic/evaluation-criteria       # Universal quality gates
+    - generic/git-commit-manager        # Git commit conventions
+
+# Agent-First Enforcement Policy
+# MANDATORY: Use agents for non-trivial tasks before using basic tools
+agent_enforcement:
+  enabled: true
+  policy: "agent-first"
+
+  # Quality control: Repeated feedback triggers mandatory agent usage
+  repeated_feedback_policy:
+    threshold: 2  # If same feature receives 2+ feedback/corrections
+    action: "mandatory_agent_use"
+    description: "Must use sub-agent when same feature receives 2+ corrections"
+    enforcement: "strict"
+    rationale: "When main agent quality is insufficient, specialized agent analysis and fixes are required"
+
+  # Task-to-Agent mapping (REQUIRED usage)
+  required_agents:
+    shell_script_implementation:
+      agent: code-developer
+      description: "Implementing ANY shell script or complex bash logic"
+      skills_loaded:
+        - shell/coding-standards
+        - shell/security-patterns
+      bypass_allowed: false
+
+    configuration_analysis:
+      agent: feature-dev:code-explorer
+      description: "Analyzing configuration files for dependencies, complexity, or issues"
+      triggers:
+        user_messages:
+          - "is there a problem"
+          - "is there any problem"
+          - "are there any problems"
+          - "what's wrong"
+          - "what is wrong"
+          - "why isn't this working"
+          - "why doesn't this work"
+          - "why is this happening"
+          - "can you check"
+          - "can you analyze"
+          - "investigate"
+          - "debug"
+          - "trace"
+          - "find the cause"
+          - "root cause"
+        task_patterns:
+          - "Configuration analysis or investigation"
+          - "Understanding file dependencies"
+          - "Bug root cause investigation"
+          - "Submodule interaction analysis"
+          - "Stow link issue investigation"
+      bypass_allowed: false
+
+    code_review:
+      agent: quality-reviewer
+      description: "Reviewing written shell scripts for standards compliance"
+      skills_loaded:
+        - shell/coding-standards
+        - shell/security-patterns
+      bypass_allowed: false
+
+    documentation_validation:
+      agent: deliverable-evaluator
+      description: "Validating documentation quality before commit"
+      bypass_allowed: false
+
+    multi_file_search:
+      agent: general-purpose
+      description: "Searching across multiple files or directories"
+      bypass_allowed: false
+
+  # When basic tools (Read, Edit, Write) are allowed WITHOUT agent
+  allow_basic_tools_only_for:
+    - "Reading single specific file with known exact path for reference"
+    - "Reading configuration files to understand settings"
+    - "Trivial edits (typo fixes, whitespace, formatting only)"
+    - "Writing documentation after agent has provided content"
+
+  # Violation consequences
+  enforcement_level: strict
+  require_justification: true  # Must explain why NOT using agent
+
+  # Self-check before using ANY tool (Read, Edit, Write, Bash)
+  self_check:
+    mandatory_questions:
+      - "Have I read @.claude/config.yaml section: agent_enforcement.required_agents?"
+      - "Does current task match any trigger patterns (user_messages or task_patterns)?"
+      - "If match found: Am I using Task tool with specified agent INSTEAD of direct tools?"
+      - "If no match: Can I document clear justification for NOT using agent?"
+
+    decision_tree:
+      step_1: "Read agent_enforcement.required_agents section"
+      step_2: "Match task against ALL triggers (user_messages + task_patterns)"
+      step_3_if_match: "STOP - Use Task tool with specified agent"
+      step_3_if_no_match: "Document justification and proceed with direct tools"
+      step_4_violation: "Using Read/Edit/Write without agent when trigger matched = POLICY FAILURE"
+
+# Skills and capabilities
+skills:
+  - shell-scripting
+  - git-submodules
+  - gnu-stow
+  - configuration-management
+  - dotfiles-organization
+
+# Problem-solving protocol
+problem_solving:
+  approach:
+    1_observe: "Document symptoms with concrete data, not assumptions"
+    2_trace: "Trace configuration flow through the entire system"
+    3_verify: "Verify every hypothesis with actual testing"
+    4_understand: "Research why current configuration exists before changing"
+    5_minimize: "Prefer the smallest possible modification"
+
+  red_flags:
+    - "Modifying the same configuration for the 3rd time"
+    - "Fix requires more than 10 lines of changes"
+    - "Cannot explain all side effects"
+    - "Using assumptions instead of verified facts"
+
+  cognitive_bias_prevention:
+    - "Replace 'probably/should/might' with 'verified that...'"
+    - "Replace 'this will fix it' with 'testing if this fixes it'"
+    - "Replace 'similar to last time' with 'unique factors here are...'"
+    - "If using 'assume' or 'guess' - STOP and debug instead"

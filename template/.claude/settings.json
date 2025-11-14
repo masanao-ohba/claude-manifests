@@ -1,0 +1,89 @@
+{
+  "description": "Project-specific Claude Code settings template",
+  "version": "1.0.0",
+  "created": "2025-11-08",
+
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '📝 Project Rule: Check .claude/config.yaml for agent enforcement policies' >&2"
+          }
+        ]
+      }
+    ],
+
+    "PreToolUse": [
+      {
+        "comment": "Protect critical project files",
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '$1' | jq -r '.tool_input.file_path // \"\"' | grep -E '(production\\.env|credentials|secrets)' && { echo '🚫 BLOCKED: Cannot modify sensitive files directly' >&2; exit 1; } || true"
+          }
+        ]
+      },
+
+      {
+        "comment": "Enforce test creation for new code",
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '$1' | jq -r '.tool_input.file_path // \"\"' | grep -E '\\.py$|\\.js$|\\.ts$' | grep -v test && echo '⚠️  Reminder: Create corresponding test file' >&2 || true"
+          }
+        ]
+      }
+    ],
+
+    "PostToolUse": [
+      {
+        "comment": "Track deliverable creation for evaluation",
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '📊 Deliverable modified. Consider running deliverable-evaluator if task is complete.' >&2"
+          }
+        ]
+      }
+    ],
+
+    "SessionEnd": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f .work/requirements/RAI-*.yaml ] && echo '✅ RAI documents found in project' >&2 || echo '💡 No RAI documents found. Consider using requirement-analyst for future tasks.' >&2"
+          }
+        ]
+      }
+    ]
+  },
+
+  "projectSpecific": {
+    "comment": "Add project-specific hooks below",
+    "examples": {
+      "pythonProject": {
+        "comment": "Example: Run black formatter after Python file edits",
+        "PreToolUse": {
+          "matcher": "Write|Edit",
+          "command": "echo '$1' | jq -r '.tool_input.file_path // \"\"' | grep '\\.py$' && echo 'Will format with black after edit' >&2"
+        }
+      },
+
+      "typescriptProject": {
+        "comment": "Example: Check for TypeScript type errors",
+        "PostToolUse": {
+          "matcher": "Write|Edit",
+          "command": "echo '$1' | jq -r '.tool_input.file_path // \"\"' | grep '\\.ts$' && echo 'Consider running tsc --noEmit to check types' >&2"
+        }
+      }
+    }
+  }
+}

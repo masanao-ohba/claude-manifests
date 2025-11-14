@@ -1,0 +1,349 @@
+# Claude Code Configuration Template
+# Version: 1.0.0
+# Created: 2025-11-08
+# Purpose: Standardized project configuration with RAI/RAO support
+
+# ============================================
+# PROJECT METADATA
+# ============================================
+project:
+  name: "Project Name"
+  type: "web|api|cli|library|service"
+  version: "0.1.0"
+  description: "Brief project description"
+
+  # Technology stack definition
+  tech_stack:
+    languages:
+      - "primary language (e.g., Python, TypeScript)"
+    frameworks:
+      - "framework name and version"
+    databases:
+      - "database type if applicable"
+    tools:
+      - "build tools, package managers, etc."
+
+# ============================================
+# OUTPUT CONFIGURATION
+# ============================================
+output:
+  language: "en"  # Output language for comments and documentation
+  comment_style: "descriptive"  # descriptive|minimal|verbose
+
+# ============================================
+# QUALITY ASSURANCE CONFIGURATION (NEW)
+# ============================================
+quality_assurance:
+  # RAI/RAO Framework Settings
+  rai_rao_enabled: true
+
+  # Task size thresholds for automatic RAI/RAO generation
+  task_size_thresholds:
+    trivial:
+      lines_of_code: 3
+      rai_required: false
+      evaluation_required: false
+
+    small:
+      lines_of_code: 50
+      rai_required: false
+      evaluation_required: true
+
+    medium:
+      lines_of_code: 200
+      rai_required: true
+      evaluation_required: true
+      workflow_orchestrator: recommended
+
+    large:
+      lines_of_code: 201  # or more
+      rai_required: true
+      evaluation_required: true
+      workflow_orchestrator: mandatory
+
+  # Quality gates
+  quality_gates:
+    code_coverage:
+      threshold: 80
+      enforced: true
+
+    code_review:
+      required: true
+      auto_invoke: true
+
+    documentation:
+      required: true
+      includes_tests: true
+
+    security_scan:
+      required: false
+      on_production_only: true
+
+# ============================================
+# AGENT-SKILL ASSIGNMENTS
+# ============================================
+agent_skills:
+  # Workflow orchestration
+  workflow-orchestrator:
+    - generic/workflow-patterns
+    - generic/git-commit-manager  # Optional, remove if not needed
+
+  # Requirement analysis with RAI/RAO
+  requirement-analyst:
+    - generic/requirement-analyzer  # Now includes RAI/RAO framework
+
+  # Design and architecture
+  design-architect:
+    - generic/software-designer
+
+  # Test planning
+  test-strategist:
+    - generic/test-planner
+
+  # Code implementation
+  code-developer:
+    - generic/code-implementer
+    # Add language/framework-specific skills as needed:
+    # - python/coding-standards
+    # - typescript/coding-standards
+
+  # Quality review
+  quality-reviewer:
+    - generic/code-reviewer
+
+  # Deliverable evaluation with RAI support
+  deliverable-evaluator:
+    - generic/evaluation-criteria
+    # Add project-specific criteria:
+    # - project-specific/deliverable-criteria
+
+# ============================================
+# AGENT ENFORCEMENT POLICY (ENHANCED)
+# ============================================
+agent_enforcement:
+  enabled: true
+  policy: "agent-first"
+
+  # Automatic RAI/RAO generation triggers
+  rai_generation_triggers:
+    - "medium or large task detected"
+    - "complex requirements identified"
+    - "multiple stakeholders involved"
+    - "production deployment planned"
+
+  # Required agent mappings
+  required_agents:
+    # RAI/RAO generation (NEW)
+    requirement_analysis:
+      agent: requirement-analyst
+      description: "Generate RAI/RAO for medium/large tasks"
+      triggers:
+        task_patterns:
+          - "New feature implementation"
+          - "Architecture changes"
+          - "API design"
+      skills_loaded:
+        - generic/requirement-analyzer
+      bypass_allowed: false
+
+    # Code implementation
+    code_implementation:
+      agent: code-developer
+      description: "Implementing production code"
+      triggers:
+        task_patterns:
+          - "Write new code"
+          - "Refactor existing code"
+      bypass_allowed: false
+
+    # Quality review
+    code_review:
+      agent: quality-reviewer
+      description: "Review code for standards and quality"
+      triggers:
+        task_patterns:
+          - "Code completed"
+          - "Before commit"
+      bypass_allowed: false
+
+    # Deliverable evaluation with RAI
+    deliverable_evaluation:
+      agent: deliverable-evaluator
+      description: "Evaluate deliverables against RAI criteria"
+      triggers:
+        task_patterns:
+          - "Task completed"
+          - "Feature ready for review"
+      input_required: "RAI document from requirement-analyst"
+      bypass_allowed: false
+
+    # Test implementation
+    test_implementation:
+      agent: code-developer
+      description: "Writing test code"
+      triggers:
+        task_patterns:
+          - "Write tests"
+          - "Test coverage needed"
+      bypass_allowed: false
+
+  # Basic tools usage (without agent)
+  allow_basic_tools_only_for:
+    - "Reading single file for reference"
+    - "Trivial typo fixes (< 3 characters)"
+    - "Viewing configuration files"
+    - "Checking file existence"
+
+  # Enforcement settings
+  enforcement_level: strict
+  require_justification: true
+  violation_tracking: true
+
+  # Self-check protocol
+  self_check:
+    frequency: 5  # Check every 5 tool uses
+    mandatory_questions:
+      - "Have I checked the task size classification?"
+      - "Is RAI/RAO generation required for this task?"
+      - "Should this be delegated to a specialist agent?"
+      - "Has the deliverable been evaluated?"
+
+# ============================================
+# TESTING CONFIGURATION
+# ============================================
+testing:
+  framework: "pytest|jest|unittest|other"
+
+  execution_commands:
+    all: "command to run all tests"
+    specific: "command to run specific test file"
+    coverage: "command to generate coverage report"
+
+  principles:
+    - "No test-specific configuration overrides"
+    - "No mocking of production code"
+    - "Use real fixture data"
+    - "Follow production code flow"
+
+# ============================================
+# WORKFLOW CONFIGURATION
+# ============================================
+workflow:
+  # Documentation structure
+  documentation:
+    knowledge_base: ".work/"
+
+    structure:
+      requirements: ".work/requirements/"  # RAI/RAO documents
+      design: ".work/design.yaml"
+      architecture: ".work/structure.yaml"
+      issues: ".work/issue-solutions.yaml"
+      evaluation_history: ".work/evaluation-history.yaml"  # NEW
+      metrics: ".work/metrics.yaml"  # NEW
+
+    # RAI/RAO document naming
+    rai_naming_convention: "RAI-{YYYY-MM-DD}-{task-id}.yaml"
+
+    update_triggers:
+      requirements:
+        - "New RAI/RAO document created"
+        - "Requirement changes approved"
+      evaluation_history:
+        - "Deliverable evaluation completed"
+        - "Iteration cycle finished"
+
+  # Commit strategy
+  commit_strategy:
+    message_format: "conventional"  # conventional|descriptive|custom
+    include_rai_reference: true  # Reference RAI doc in commit message
+
+    examples:
+      - "feat: Add user auth [RAI-2025-11-08-001]"
+      - "fix: Resolve API timeout [RAI-2025-11-08-002]"
+
+# ============================================
+# GIT CONFIGURATION
+# ============================================
+git:
+  claude_signature: false
+  allow_push: false
+
+  # RAI/RAO tracking in commits
+  commit_metadata:
+    include_rai_id: true
+    include_evaluation_result: true
+
+# ============================================
+# ERROR HANDLING
+# ============================================
+error_handling:
+  critical_rule: "NO silent failures"
+
+  prohibited_patterns:
+    - "Catch-all error handlers"
+    - "Silent fallbacks"
+    - "Default values without logging"
+
+  required_patterns:
+    - "Explicit error messages"
+    - "Error logging with context"
+    - "User-friendly error reporting"
+
+# ============================================
+# METRICS AND FEEDBACK (NEW)
+# ============================================
+metrics:
+  enabled: true
+
+  tracking:
+    - metric: "agent_usage_rate"
+      description: "Percentage of tasks using appropriate agents"
+      target: ">= 90%"
+
+    - metric: "rai_compliance_rate"
+      description: "Percentage of medium/large tasks with RAI"
+      target: "100%"
+
+    - metric: "evaluation_pass_rate"
+      description: "First-time pass rate for deliverables"
+      target: ">= 80%"
+
+    - metric: "iteration_count"
+      description: "Average iterations needed for pass"
+      target: "<= 2"
+
+  feedback_loop:
+    enabled: true
+    storage: ".work/feedback-history.yaml"
+    analysis_frequency: "weekly"
+    improvement_actions: "automatic"
+
+# ============================================
+# HOOKS CONFIGURATION (OPTIONAL)
+# ============================================
+hooks:
+  enabled: false  # Set to true to enable hooks
+
+  # Hook definitions
+  user_prompt_submit:
+    script: ".claude/hooks/user-prompt-submit.sh"
+    enabled: false
+
+  pre_tool_use:
+    script: ".claude/hooks/pre-tool-use.sh"
+    enabled: false
+
+  post_deliverable:
+    script: ".claude/hooks/post-deliverable.sh"
+    enabled: false
+
+# ============================================
+# PROJECT-SPECIFIC EXTENSIONS
+# ============================================
+# Add any project-specific configuration below
+# Example:
+# custom:
+#   api_version: "v1"
+#   deployment_environment: "development"
+#   feature_flags:
+#     - "new_auth_system"
