@@ -1,6 +1,25 @@
 ---
 name: coding-standards
 description: PHP coding standards (PSR-12, PHPDoc, type hints) for any PHP project
+hooks:
+  SessionStart:
+    - type: command
+      command: |
+        if command -v yq &> /dev/null && [ -f ".claude/config.yaml" ]; then
+          echo "=== PHP Coding Standards ==="
+          yq -o=json '.coding_standards' .claude/config.yaml 2>/dev/null || true
+        fi
+  PostToolUse:
+    - matcher: "Edit|Write"
+      hooks:
+        - type: command
+          command: |
+            FILE="${TOOL_INPUT_FILE_PATH:-}"
+            [ -z "$FILE" ] && exit 0
+            EXT="${FILE##*.}"
+            case "$EXT" in
+              php) php -l "$FILE" 2>&1 | head -5 || true ;;
+            esac
 ---
 
 # PHP Coding Standards

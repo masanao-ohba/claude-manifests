@@ -1,0 +1,91 @@
+# =============================================================================
+# Claude Code Project Configuration Template
+# =============================================================================
+# Copy this file to your project's .claude/config.yaml
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Output Settings
+# -----------------------------------------------------------------------------
+output:
+  language: en  # en | ja
+
+# -----------------------------------------------------------------------------
+# Git Operations
+# -----------------------------------------------------------------------------
+git:
+  operations:
+    commit: user_request_only    # auto | user_request_only | prohibited
+    push: user_request_only      # auto | user_request_only | prohibited
+    branch: user_request_only    # auto | user_request_only | prohibited
+  commit_message:
+    format: conventional         # conventional | simple | custom
+    scope_required: false
+  claude_signature: false        # Include Claude Code signature in commits
+  allow_push: false              # Allow auto-push after commit
+
+# -----------------------------------------------------------------------------
+# Agent Configuration
+# -----------------------------------------------------------------------------
+agents:
+  code-developer:
+    skills:
+      # Generic skills (always included implicitly)
+      # - generic/code-reviewer
+      # Language-specific skills
+      - php/coding-standards
+      # Framework-specific skills
+      - php-cakephp/code-implementer
+
+  quality-reviewer:
+    skills:
+      - generic/code-reviewer
+      - php-cakephp/test-validator
+
+  test-executor:
+    skills:
+      - generic/test-implementer
+
+# -----------------------------------------------------------------------------
+# Skill Configuration
+# -----------------------------------------------------------------------------
+skills:
+  code-reviewer:
+    focus_areas:
+      security: true
+      performance: true
+      maintainability: true
+      testing: true
+    severity:
+      block_on: [critical, security]
+      warn_on: [minor, style]
+    custom_rules: []
+      # - name: "no-console-log"
+      #   pattern: "console.log"
+      #   severity: minor
+      #   message: "Remove console.log statements"
+
+  test-validator:
+    enabled: true
+    rules:
+      require_guarantee_section: true
+
+# -----------------------------------------------------------------------------
+# Testing Configuration
+# -----------------------------------------------------------------------------
+testing:
+  command: "docker compose run --rm web vendor/bin/phpunit"
+  docker_command: "docker compose run --rm web"
+  rules:
+    documentation: "tests/README.md"
+    prohibitions:
+      - "Configure::write() でテスト設定上書き禁止"
+      - "本番コードのモック禁止"
+
+# -----------------------------------------------------------------------------
+# Task Scaling Configuration
+# -----------------------------------------------------------------------------
+task_scaling:
+  thresholds:
+    simple_max_files: 3
+    simple_max_lines: 100

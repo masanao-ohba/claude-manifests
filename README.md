@@ -1,1058 +1,343 @@
-# Skill-Driven Agent Configuration Guide
+# Claude Code Agent Orchestration System
 
-![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
-![Shell Script](https://img.shields.io/badge/shell_script-%23121011.svg?style=flat&logo=gnu-bash&logoColor=white)
-![YAML](https://img.shields.io/badge/yaml-%23ffffff.svg?style=flat&logo=yaml&logoColor=151515)
-![Documentation](https://img.shields.io/badge/documentation-guide-blue.svg)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Claude Code](https://img.shields.io/badge/Claude-Code-blueviolet)](https://claude.ai/code)
+[![Version](https://img.shields.io/badge/version-2.0.0-blue)](#)
+[![Maintained](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](#)
+[![macOS](https://img.shields.io/badge/macOS-compatible-brightgreen)](#)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#)
+[![Made with Claude](https://img.shields.io/badge/Made%20with-Claude-orange)](https://claude.ai)
+
+A multi-agent orchestration system for Claude Code that enables consistent, reusable AI-assisted development across multiple projects and technology stacks through skill-driven architecture.
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [1. Responsibility Definition](#1-responsibility-definition)
-- [2. Skill-Driven Architecture Mechanism](#2-skill-driven-architecture-mechanism)
-- [3. CLAUDE.md Configuration Definition](#3-claudemd-configuration-definition)
-- [4. config.yaml Configuration Definition](#4-configyaml-configuration-definition)
-- [5. Configuration Examples](#5-configuration-examples)
-- [6. Common Mistakes and Fixes](#6-common-mistakes-and-fixes)
-- [7. Troubleshooting](#7-troubleshooting)
-- [8. Validation Checklist](#8-validation-checklist)
-- [9. Decision Flowcharts](#9-decision-flowcharts)
-- [10. Summary](#10-summary)
-- [Appendix: Complete config.yaml Template](#appendix-complete-configyaml-template)
+- [Introduction](#introduction)
+- [Key Features](#key-features)
+- [Architecture Workflow](#architecture-workflow)
+- [Hook Usage Matrix](#hook-usage-matrix)
+- [Skill Usage Matrix](#skill-usage-matrix)
+- [Agent Role Reference](#agent-role-reference)
+- [Skill Reference](#skill-reference)
+- [Getting Started](#getting-started)
+- [Configuration](#configuration)
+- [License](#license)
 
-## Overview
+## Introduction
 
-This guide defines how to configure `~/.claude/agents`, `~/.claude/skills`, `.claude/config.yaml`, and `CLAUDE.md`, along with their respective areas of responsibility.
+This system implements a sophisticated multi-agent architecture where specialized agents collaborate through a central orchestrator. The design follows a **Two-Phase Triage** approach that efficiently classifies incoming requests and routes them to appropriate handlers, ensuring optimal resource utilization and consistent quality across all operations.
 
-### Architecture Principles
+## Key Features
 
-```
-Agent = Generic Process Executor
-Skill = Domain Knowledge Provider
-config.yaml = Binding Layer
-CLAUDE.md = Project-Specific Rules
-```
+- **Two-Phase Triage**: Efficient request classification before deep analysis
+- **Skill-Based Adaptation**: Generic agents adapt to any technology through loadable skills
+- **Separation of Concerns**: Clear responsibility boundaries between agents
+- **Quality Gates**: Built-in review and evaluation checkpoints
+- **Multi-Project Support**: Centralized configuration with project-specific overrides
 
-### Responsibility Layer Model (4 Layers)
+## Architecture Workflow
 
-| Layer | Location | Responsibility | Reusability | Examples |
-|-------|----------|---------------|-------------|----------|
-| **Level 1: Generic** | `~/.claude/skills/generic/` | Universal Patterns | ⭐⭐⭐⭐⭐ All Tech Stacks | MoSCoW, SMART, AAA |
-| **Level 2: Language** | `~/.claude/skills/[language]/` | Language-Level Standards | ⭐⭐⭐⭐ All [language] Projects | PSR-12, PHPUnit, PEP-8 |
-| **Level 3: Framework** | `~/.claude/skills/[language]-[FW]/` | Framework Conventions | ⭐⭐⭐ All [FW] Projects | CakePHP MVC, Django MVT |
-| **Level 4: Project** | `CLAUDE.md`, `config.yaml` | Project-Specific Rules | ⭐ Project Only | Test Comment Format, Multi-Repo Config |
+```mermaid
+flowchart TD
+    subgraph Entry["🚪 Entry Layer"]
+        A[User Request] --> B[quick-classifier]
+    end
 
----
+    subgraph Analysis["🔍 Analysis Layer"]
+        B --> C{Trivial?}
+        C -->|Yes| D[main-orchestrator<br/>Direct Execution]
+        C -->|No| G[goal-clarifier]
+        G --> H{Needs<br/>Clarification?}
+        H -->|Yes| I[main-orchestrator<br/>Ask User]
+        I --> G
+        H -->|No| J[task-scale-evaluator]
+        J --> K{Scale?}
+    end
 
-## 1. Responsibility Definition
+    subgraph Implementation["⚙️ Implementation Layer"]
+        K -->|Complex| M[workflow-orchestrator]
+        K -->|Simple| L[code-developer]
+        M --> L
+        L --> N[test-executor]
+        N --> O{Tests Pass?}
+        O -->|No| P[test-failure-debugger]
+        P --> L
+    end
 
-### 1.1 CLAUDE.md Responsibility Scope
+    subgraph Quality["✅ Quality Layer"]
+        O -->|Yes| Q[quality-reviewer]
+        Q --> R[deliverable-evaluator]
+        R --> S{Criteria<br/>Met?}
+        S -->|No| L
+    end
 
-**Role**: Define project-specific rules (override default behavior)
+    G -.->|Acceptance Criteria| R
 
-**Should Include**:
-- Project-specific conventions (unique rules not applicable to other projects)
-- Team-specific workflows (outside standard framework patterns)
-- Project-specific constraints (multi-repository configuration, legacy patterns)
-- Custom documentation formats
-- Project-specific quality gates
-- Repository-specific file paths and structure
-- Project-specific approval flows
+    subgraph Report["📋 Report Layer"]
+        S -->|Yes| T[main-orchestrator<br/>Report Results]
+        D --> T
+        T --> U[Complete]
+    end
 
-**Should NOT Include**:
-- Language coding standards → `[language]/coding-standards` skill
-- Framework conventions → `[language]-[FW]/` skill
-- Test framework patterns → `[language]/testing-standards` skill
-- Security best practices → `[language]/security-patterns` skill
-- Generic patterns → `generic/` skill
-
-### 1.2 config.yaml Responsibility Scope
-
-**Role**: Agent and skill binding definition
-
-**Main Sections**:
-
-| Section | Role | Required/Optional |
-|---------|------|------------------|
-| `repo_metadata` | Project info & tech stack definition | Required |
-| `agent_skills` | Skill assignment to generic agents | Required |
-| `agents` | Technology-specific agent settings | Optional |
-| `database` | Database settings | Optional |
-| `test` | Test execution settings | Optional |
-| `paths` | File path settings | Optional |
-| `dependencies` | Dependency definitions | Optional |
-
-### 1.3 Skills Responsibility Scope
-
-**Role**: Provide reusable domain knowledge and patterns
-
-**Skill Directory Structure**:
-```
-~/.claude/skills/
-├── generic/
-│   ├── requirement-analyzer/     # Universal requirement analysis patterns
-│   ├── test-planner/             # Universal test planning patterns
-│   └── code-reviewer/            # Universal code review patterns
-│
-├── [language]/                    # e.g., php, python, javascript
-│   ├── coding-standards/         # Language-level coding standards
-│   ├── testing-standards/        # Language-level test standards
-│   └── security-patterns/        # Language-level security patterns
-│
-└── [language]-[framework]/        # e.g., php-cakephp, python-django
-    ├── functional-designer/      # Framework MVC design
-    ├── database-designer/        # Framework ORM/migrations
-    └── test-case-designer/       # Framework test patterns
+    style Entry fill:#e3f2fd,stroke:#1976d2
+    style Analysis fill:#fff8e1,stroke:#f9a825
+    style Implementation fill:#e8f5e9,stroke:#388e3c
+    style Quality fill:#fce4ec,stroke:#c2185b
+    style Report fill:#f3e5f5,stroke:#7b1fa2
 ```
 
-### 1.4 Agents Responsibility Scope
+### Direct Execution Limits (Trivial Tasks)
 
-**Role**: Execute generic processes (technology-agnostic)
+| Limit | Value |
+|-------|-------|
+| max_file_reads | 3 |
+| max_search_iterations | 2 |
+| allowed_operations | read, search, list |
 
-**Agent Classification**:
+## Hook Usage Matrix
 
-| Type | Location | Tech Dependency | Skill Loading |
-|------|----------|----------------|---------------|
-| **Generic Agents** | `~/.claude/agents/generic/` | None | Dynamic from config.yaml |
-| **Tech-Specific Agents** | `~/.claude/agents/[language]-[FW]/` | Yes | Fixed or configured |
+### Agent Hooks (Chain Control Only)
 
-**Generic Agent List**:
-- `workflow-orchestrator` - Workflow coordination
-- `requirement-analyst` - Requirements analysis
-- `design-architect` - Software design
-- `test-strategist` - Test strategy planning
-- `code-developer` - Code implementation
-- `quality-reviewer` - Quality review
-- `deliverable-evaluator` - Deliverable evaluation
+| Agent | SessionStart | PreToolUse | SubagentStop | Stop |
+|-------|:------------:|:----------:|:------------:|:----:|
+| quick-classifier | - | - | - | - |
+| goal-clarifier | - | - | 💬 | - |
+| main-orchestrator | - | - | - | 💬 |
+| task-scale-evaluator | - | - | 💬 | - |
+| design-architect | - | - | 💬 | - |
+| code-developer | - | 💬 | 💬 | - |
+| test-strategist | - | - | 💬 | - |
+| test-executor | - | - | 💬 | - |
+| test-failure-debugger | - | - | 💬 | - |
+| quality-reviewer | - | - | 💬 | - |
+| deliverable-evaluator | 💬 | 💬 | 💬 | - |
+| workflow-orchestrator | - | - | 💬 | - |
 
-**Tech-Specific Agent Criteria**:
+### Skill Hooks (Config Loading & Validation)
 
-✅ **Should define as tech-specific agent when**:
-- Framework-specific workflow (doesn't exist in other frameworks)
-- Project-specific process (e.g., multi-repository validation)
-- Framework-specific tool integration
+| Skill | SessionStart | PostToolUse |
+|-------|:------------:|:-----------:|
+| generic/test-implementer | ⌘ (testing rules) | - |
+| generic/task-scaler | ⌘ (scale config) | - |
+| typescript/coding-standards | ⌘ (coding standards) | ⌘ (eslint) |
+| php/coding-standards | ⌘ (coding standards) | ⌘ (php -l) |
 
-❌ **Should use generic agent + skills when**:
-- Process is generic but implementation differs by tech stack
-- Can be handled by skill combinations
+**Legend:** ⌘ = shell script hook (uses yq for config), 💬 = prompt injection hook
 
----
+### Architecture Principle
 
-## 2. Skill-Driven Architecture Mechanism
+- **Skills**: Load project-specific rules via `yq` from `.claude/config.yaml`
+- **Agents**: Chain control only (SubagentStop, Stop) - no rule-based hooks
 
-### 2.1 Operation Flow
+> **Exception**: deliverable-evaluator has a SessionStart prompt hook for loading evaluation context from the prompt (not config loading).
 
+
+## Skill Usage Matrix
+
+### Generic Skills
+
+| Agent | req-analyzer | accept-criteria | workflow-pat | task-scaler | deleg-router | design-pat | test-impl | code-rev | compl-eval | eval-criteria | deliv-valid | git-op |
+|-------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| quick-classifier | - | - | - | - | - | - | - | - | - | - | - | - |
+| goal-clarifier | ✅️ | ✅️ | - | - | - | - | - | - | - | - | - | - |
+| main-orchestrator | - | - | ✅️ | ✅️ | ✅️ | - | - | - | - | - | - | - |
+| task-scale-evaluator | ✅️ | - | - | ✅️ | - | - | - | - | - | - | - | - |
+| design-architect | - | - | - | - | - | ✅️ | - | - | - | - | - | - |
+| code-developer | - | - | - | - | - | - | - | - | - | - | - | - |
+| test-strategist | - | - | - | - | - | - | - | - | - | - | - | - |
+| test-executor | - | - | - | - | - | - | ✅️ | - | - | - | - | - |
+| test-failure-debugger | - | - | - | - | - | - | - | - | - | - | - | - |
+| quality-reviewer | - | - | - | - | - | - | - | ✅️ | - | - | - | - |
+| deliverable-evaluator | - | - | - | - | - | - | - | - | ✅️ | ✅️ | ✅️ | - |
+| workflow-orchestrator | - | - | - | - | - | - | - | - | - | - | - | ✅️ |
+
+**Legend:** req-analyzer = requirement-analyzer, accept-criteria = acceptance-criteria, workflow-pat = workflow-patterns, deleg-router = delegation-router, design-pat = design-patterns, test-impl = test-implementer, code-rev = code-reviewer, compl-eval = completion-evaluator, eval-criteria = evaluation-criteria, deliv-valid = deliverable-validator, git-op = git-operator
+
+### Language/Framework Skills (configured per project)
+
+| Agent | Loads From Config |
+|-------|-------------------|
+| code-developer | `language/*`, `framework/*` (e.g., php/coding-standards, typescript-react/code-implementer) |
+| test-strategist | `language/testing-standards`, `framework/test-*` |
+| quality-reviewer | `language/*-standards`, `framework/code-reviewer` |
+| design-architect | `framework/*-designer` |
+
+## Agent Role Reference
+
+| Agent | Responsibility | Action |
+|-------|----------------|--------|
+| quick-classifier | Request classification | Direct execution eligibility |
+| goal-clarifier | Requirement analysis | Acceptance criteria definition, clarifying questions |
+| main-orchestrator | Task routing | Delegate to appropriate agents |
+| task-scale-evaluator | Complexity assessment | Simple/complex determination |
+| design-architect | Architecture design | Technical design and patterns |
+| code-developer | Code implementation | Write code following skills |
+| test-strategist | Test planning | Test strategy and case design |
+| test-executor | Test execution | Run tests and determine pass/fail |
+| test-failure-debugger | Failure analysis | Root cause investigation and fix suggestions |
+| quality-reviewer | Quality review | Code quality and security check |
+| deliverable-evaluator | Acceptance verification | Match against acceptance criteria |
+| workflow-orchestrator | Workflow coordination | Multi-agent collaboration |
+
+## Skill Reference
+
+### Generic Skills (12)
+
+| Skill | Description |
+|-------|-------------|
+| acceptance-criteria | Defines acceptance criteria patterns and validation rules |
+| code-reviewer | Universal code review patterns and checklists |
+| completion-evaluator | Task completion verification criteria |
+| delegation-router | Agent delegation decision patterns |
+| deliverable-validator | Deliverable validation rules and quality checks |
+| design-patterns | SOLID, DRY, KISS, and architectural patterns |
+| evaluation-criteria | Final evaluation standards and metrics |
+| git-operator | Git operation patterns and commit message standards |
+| requirement-analyzer | Requirement analysis and documentation patterns |
+| task-scaler | Task complexity evaluation criteria |
+| test-implementer | Test implementation patterns and best practices |
+| workflow-patterns | Multi-step workflow coordination patterns |
+
+### PHP Skills (3)
+
+| Skill | Description |
+|-------|-------------|
+| coding-standards | PSR-12 coding standards and PHP best practices |
+| security-patterns | OWASP patterns, input validation, SQL injection prevention |
+| testing-standards | PHPUnit best practices and testing patterns |
+
+### PHP-CakePHP Skills (12)
+
+| Skill | Description |
+|-------|-------------|
+| code-implementer | CakePHP MVC implementation patterns |
+| code-reviewer | CakePHP-specific code review checklist |
+| database-designer | Database schema design for CakePHP |
+| fixture-generator | Test fixture generation patterns |
+| functional-designer | Functional specification design |
+| migration-checker | Migration validation and verification |
+| multi-tenant-db-handler | Multi-tenant database patterns |
+| refactoring-advisor | CakePHP refactoring recommendations |
+| requirement-analyzer | CakePHP-specific requirement analysis |
+| test-case-designer | Test case design for CakePHP |
+| test-validator | Test quality and specification validation |
+
+### TypeScript Skills (10)
+
+| Skill | Description |
+|-------|-------------|
+| typescript/coding-standards | TypeScript coding standards and best practices |
+| typescript-react/architectural-patterns | React architectural patterns and component design |
+| typescript-react/code-implementer | React component implementation patterns |
+| typescript-react/code-reviewer | React-specific code review checklist |
+| typescript-react/testing-standards | React testing patterns with Jest/RTL |
+| typescript-nextjs/code-implementer | Next.js implementation patterns |
+| typescript-nextjs/code-reviewer | Next.js-specific code review checklist |
+| typescript-nextjs/deliverable-criteria | Next.js deliverable validation criteria |
+| typescript-react-query/patterns | React Query/TanStack Query patterns |
+| typescript-zustand/patterns | Zustand state management patterns |
+
+## Installation Requirements
+
+### Prerequisites
+
+- **yq** - YAML processor for reading project configuration
+  ```bash
+  # macOS (recommended)
+  brew install yq
+
+  # Alternative: pip
+  pip install yq
+  ```
+
+  yq is used by skill hooks to read project-specific rules from `.claude/config.yaml`.
+
+## Getting Started
+
+### 1. Copy templates to your project
+
+```bash
+# Copy CLAUDE.md template
+cp ~/.claude/templates/CLAUDE.md /path/to/project/CLAUDE.md
+
+# Copy config.yaml template
+mkdir -p /path/to/project/.claude
+cp ~/.claude/templates/.claude/config.yaml /path/to/project/.claude/config.yaml
 ```
-1. Agent startup
-   ↓
-2. Load config.yaml
-   ↓
-3. Detect assigned skills
-   agent_skills:
-     requirement-analyst:
-       - generic/requirement-analyzer
-       - [language]/requirement-patterns
-       - [language]-[FW]/requirement-analyzer
-   ↓
-4. Load skills in order
-   ↓
-5. Execute generic process using loaded skills
-   ↓
-6. Output tech-stack-specific deliverables
-```
 
-### 2.2 Skill Loading Order
+### 2. Configure your project
+
+Edit `CLAUDE.md` with project-specific rules:
+- Business rules and constraints
+- Prohibited patterns with explanations
+- Quality gates and requirements
+
+Edit `.claude/config.yaml` with technical settings:
+- Technology stack specification
+- Agent skill assignments
+- Test command configuration
+
+### 3. Start using Claude Code
+
+The main-orchestrator will automatically classify requests and route them appropriately.
+
+## Configuration
+
+Configuration is managed through `.claude/config.yaml` in each project.
+
+**Required sections:**
+1. `agent_skills` - Which skills are used by which agents
+2. `skills.*` - Skill-specific customization rules
+3. `testing.*` - Test execution configuration
 
 ```yaml
+# Agent-Skill Assignments (defines tech stack implicitly)
 agent_skills:
   code-developer:
-    - generic/code-implementer          # 1st: Universal patterns
-    - php/coding-standards              # 2nd: Language-specific (can override generic)
-    - php/security-patterns             # 3rd: Language-specific (can override generic, php)
-    - php-cakephp/code-implementer      # 4th: FW-specific (can override all)
-    - php-cakephp/multi-tenant-handler  # 5th: Project-specific (highest priority)
-```
-
-**Loading Strategy**:
-1. Generic skills → Provide base patterns
-2. Language skills → Add language-specific patterns
-3. Framework skills → Add FW-specific patterns
-4. Project skills → Add project-specific patterns (most specific takes priority)
-
----
-
-## 3. CLAUDE.md Configuration Definition
-
-### 3.1 Required Sections
-
-#### Configuration Status
-
-```markdown
-# CLAUDE.md - [Project Name] Configuration
-
-**Configuration Status**: [PERMANENT|TEMPORARY]
-**Purpose**: [What this configuration achieves]
-
-[For temporary configurations]
-**Validity Period**: YYYY-MM-DD ~ [End Condition]
-**Replaces**: [What it replaces]
-```
-
-#### Absolute Rules
-
-```markdown
-## Absolute Rules - Project Priority Principle
-
-### Rule Priority
-
-**Important**: When project documentation conflicts with AI general knowledge, follow project documentation
-
-Priority (High → Low):
-1. Explicit project rules (CLAUDE.md, README.md) ← Highest Authority
-2. Production code behavior (what actually exists)
-3. AI general knowledge (Docker, frameworks, etc.) ← Lowest Authority
-
-**Reason for this hierarchy**:
-- [Project-specific reason 1]
-- [Project-specific reason 2]
-```
-
-#### Project-Specific Standards
-
-```markdown
-## Project-Specific Standards
-
-### [Standard Name] (Required)
-
-**This format is project-specific**:
-
-[Specific definition]
-
-**Why project-specific**: [Explanation of reason]
-```
-
-### 3.2 Optional Sections
-
-#### Multi-Repository Configuration (if applicable)
-
-```markdown
-## Multi-Repository Configuration
-
-This project is part of a multi-repository system:
-
-[Repository structure diagram]
-
-**Inter-Repository Dependencies**:
-- [Dependency documentation]
-
-**Production Code Verification**: Cross-repository search
-```
-
-#### Custom Workflow Patterns
-
-```markdown
-## Custom Workflow Patterns
-
-### [Pattern Name]
-
-**Application Timing**: [When to use this pattern]
-
-**Process**:
-1. [Step 1]
-2. [Step 2]
-
-**Rationale**: [Why this project uses this specific pattern]
-```
-
----
-
-## 4. config.yaml Configuration Definition
-
-### 4.1 Required Section Definition
-
-#### Repository Metadata
-
-```yaml
-repo_metadata:
-  name: [Project Name]
-  type: [Project Type]
-  description: [Brief Description]
-
-  tech_stack:
-    language: [Language Name]                    # PHP, Python, JavaScript, etc.
-    language_version: "[Version]"                # "8.2", "3.11", "20.x"
-    framework: [Framework Name]                  # CakePHP, Django, React, etc.
-    framework_version: "[Version]"               # "4.4", "4.2", "18.0"
-    test_framework: [Test Framework Name]        # PHPUnit, pytest, Jest
-    test_framework_version: "[Version]"          # "11.5", "7.4", "29.0"
-```
-
-#### Agent-Skill Assignment (Most Important)
-
-```yaml
-agent_skills:
-  [Agent Name]:
-    - [Skill Path 1]  # Load first
-    - [Skill Path 2]  # 2nd (can override skill 1)
-    - [Skill Path 3]  # 3rd (can override skills 1,2)
-```
-
-**Skill Path Format**:
-```
-[scope]/[skill-name]
-
-Scope:
-  - generic       (universal patterns)
-  - [language]    (language-level patterns)
-  - [language]-[FW]   (framework-level patterns)
-```
-
-**Standard Agent-Skill Assignment Template**:
-
-```yaml
-agent_skills:
-  workflow-orchestrator:
-    - generic/workflow-patterns
-
-  requirement-analyst:
-    - generic/requirement-analyzer
-    - [language]/requirement-patterns
-    - [language]-[FW]/requirement-analyzer
-
-  design-architect:
-    - generic/software-designer
-    - [language]/architectural-patterns
-    - [language]-[FW]/functional-designer
-    - [language]-[FW]/database-designer
-
-  test-strategist:
-    - generic/test-planner
-    - [language]/testing-standards
-    - [language]-[FW]/test-case-designer
-
-  code-developer:
-    - generic/code-implementer
-    - [language]/coding-standards
-    - [language]/security-patterns
-    - [language]-[FW]/code-implementer
-
-  quality-reviewer:
-    - generic/code-reviewer
-    - [language]/coding-standards
-    - [language]/security-patterns
-    - [language]-[FW]/code-reviewer
-
-  deliverable-evaluator:
-    - generic/evaluation-criteria
-    - [language]-[FW]/deliverable-criteria
-```
-
-#### Tech-Specific Agent Settings
-
-```yaml
-agents:
-  [Agent Name]:
-    enabled: true|false
-    [Agent-specific settings]
-    skills:
-      - [Skill Path]
-```
-
-**`agents` vs `agent_skills` Usage**:
-
-| Section | When to Use | Examples |
-|---------|-------------|----------|
-| `agent_skills` | Agent is generic, adapts via skills | requirement-analyst, code-developer, quality-reviewer |
-| `agents` | Framework-unique workflows only | Extremely rare - use `agents: {}` in most cases |
-
-### 4.2 Optional Section Definition
-
-#### Database Settings
-
-```yaml
-database:
-  architecture: [single-tenant|multi-tenant]
-  pattern: "[Pattern String]"
-  schemas:
-    - name: [Schema Name]
-      type: [shared|per-tenant]
-      database: [Database Name or Pattern]
-```
-
-#### Test Settings
-
-```yaml
-test:
-  docker_command: "[Docker Command]"
-  test_database_prefix: [Prefix]
-  fixture_namespaces:
-    - [Namespace 1]
-    - [Namespace 2]
-  constants:
-    [Constant Name]: [Value]
-```
-
-#### Path Settings
-
-```yaml
-paths:
-  controllers: [Path]
-  models: [Path]
-  components: [Path]
-  fixtures: [Path]
-  test_cases: [Path]
-  migrations: [Path]
-  routes: [Path]
-```
-
-#### Dependencies
-
-```yaml
-dependencies:
-  depends_on:
-    - [Dependency 1]
-    - [Dependency 2]
-  referenced_by:
-    - [Reference 1]
-    - [Reference 2]
-```
-
----
-
-## 5. Configuration Examples
-
-### 5.1 Simple Web Application
-
-```yaml
-# .claude/config.yaml
-
-repo_metadata:
-  name: simple-blog
-  type: web-app
-  description: Simple blog application
-
-  tech_stack:
-    language: PHP
-    language_version: "8.2"
-    framework: CakePHP
-    framework_version: "4.4"
-    test_framework: PHPUnit
-    test_framework_version: "11.5"
-
-agent_skills:
-  requirement-analyst:
-    - generic/requirement-analyzer
-    - php-cakephp/requirement-analyzer
-
-  design-architect:
-    - generic/software-designer
-    - php-cakephp/functional-designer
-    - php-cakephp/database-designer
-
-  code-developer:
-    - generic/code-implementer
     - php/coding-standards
-    - php/security-patterns
     - php-cakephp/code-implementer
-
   quality-reviewer:
     - generic/code-reviewer
-    - php/coding-standards
-    - php-cakephp/code-reviewer
-
-agents: {}  # No tech-specific agents needed
-```
-
-### 5.2 Multi-Tenant Project
-
-```yaml
-# .claude/config.yaml
-
-repo_metadata:
-  name: saas-platform
-  type: saas
-  description: Multi-tenant SaaS platform
-
-  tech_stack:
-    language: PHP
-    language_version: "8.2"
-    framework: CakePHP
-    framework_version: "4.4"
-    test_framework: PHPUnit
-    test_framework_version: "11.5"
-
-  database:
-    architecture: multi-tenant
-    pattern: "db_company_%d"
-    schemas:
-      - name: SharedSchema
-        type: shared
-        database: shared_account_db
-      - name: TenantSchema
-        type: per-tenant
-        database: "db_company_%d"
-
-agent_skills:
-  code-developer:
-    - generic/code-implementer
-    - php/coding-standards
-    - php/security-patterns
-    - php-cakephp/code-implementer
-    - php-cakephp/multi-tenant-handler  # Multi-tenant specific
-
-  quality-reviewer:
-    - generic/code-reviewer
-    - php/coding-standards
-    - php/security-patterns
-    - php-cakephp/code-reviewer
-    - php-cakephp/test-validator       # Test quality validation
-    - php-cakephp/migration-checker    # Migration validation
-
-agents: {}  # Generic agents + skills handle all use cases
-```
-
-### 5.3 Python/Django Project (Example)
-
-```yaml
-# .claude/config.yaml
-
-repo_metadata:
-  name: ecommerce-platform
-  type: e-commerce
-  description: E-commerce platform
-
-  tech_stack:
-    language: Python
-    language_version: "3.11"
-    framework: Django
-    framework_version: "4.2"
-    test_framework: pytest
-    test_framework_version: "7.4"
-
-agent_skills:
-  requirement-analyst:
-    - generic/requirement-analyzer
-    - python/requirement-patterns
-    - python-django/requirement-analyzer
-
-  design-architect:
-    - generic/software-designer
-    - python/architectural-patterns
-    - python-django/functional-designer
-    - python-django/database-designer
-
-  code-developer:
-    - generic/code-implementer
-    - python/coding-standards      # PEP-8
-    - python/security-patterns
-    - python-django/code-implementer  # Django MVT
-
-  test-strategist:
-    - generic/test-planner
-    - python/testing-standards    # pytest conventions
-    - python-django/test-case-designer
-
-  quality-reviewer:
-    - generic/code-reviewer
-    - python/coding-standards
-    - python/security-patterns
-    - python-django/code-reviewer
-
-agents: {}
-```
-
-### 5.4 CLAUDE.md Example (Minimal)
-
-```markdown
-# CLAUDE.md - Blog Application
-
-**Configuration Status**: PERMANENT
-**Purpose**: Blog application specific conventions
-
-## Project Context
-
-Single-repository blog application
-
-## Project-Specific Standards
-
-### Blog Post Slug Format
-- Lowercase required
-- Use hyphens (no underscores)
-- Unique per publication date
-- Example: `2025-10-19-my-blog-post`
-
-**Rationale**: SEO optimization and URL readability
-
-### Custom Approval Workflow
-Blog posts require two approvals:
-1. Editorial review (content quality)
-2. Technical review (XSS protection, proper escaping)
-
-## Quality Gates
-
-Posts must pass:
-- [ ] Editorial checklist
-- [ ] Technical security scan
-- [ ] SEO metadata complete
-```
-
-### 5.5 CLAUDE.md Example (Multi-Repository Project)
-
-```markdown
-# CLAUDE.md - Admin Project
-
-**Configuration Status**: PERMANENT
-**Purpose**: Multi-repository project specific conventions
-
-## Multi-Repository Configuration
-
-This project is part of a multi-repository system:
-
-```
-Project Group/
-├── admin/      # Admin interface (current repository)
-├── user/       # User-facing application
-└── batch/      # Background job processing
-
-Common Libraries/
-├── message/    # Shared message handling
-└── deliver/    # Shared delivery system
-```
-
-**Inter-Repository Dependencies**:
-- admin → depends on message, deliver
-- user → depends on message, deliver
-- batch → depends on message, deliver
-
-**Production Code Verification**: Search all repositories for production code existence before test creation
-
-## Project-Specific Standards
-
-### Test Comment Format (Required)
-
-**This format is project-specific**:
-
-```php
-/**
- * [Feature description]
- *
- * Guarantees:
- * 1. [Specific guarantee - numbered list required]
- * 2. [Another guarantee]
- * Loss on Failure:
- * - [Business impact if test doesn't exist]
- */
-public function testSomething(): void
-```
-
-**Why project-specific**: Project policy requires documenting business impact. Not PHPUnit standard.
-
-### Production Code Verification Protocol
-
-**Reason**: Code is distributed across admin, user, batch
-Verify production code exists in any repository before test creation
-
-**Procedure**: Use quality-reviewer agent with multi-repository search skills
-
-## Prohibited Patterns
-
-### Configuration Override in Tests (Prohibited)
-
-❌ **Prohibited**: Using `Configure::write()` in test methods
-
-✅ **Required**: Use `Configure::read()` to get production config values
-
-**Rationale**: Tests should verify production behavior, not test-specific behavior
-```
-
----
-
-## 6. Common Mistakes and Fixes
-
-### 6.1 CLAUDE.md Mistakes
-
-#### ❌ Mistake 1: Including Framework Standards
-
-**Wrong**:
-```markdown
-## CAKEPHP MVC Pattern
-
-Controllers should follow CakePHP conventions...
-```
-
-**Fix**: Move to `~/.claude/skills/php-cakephp/`
-- This is framework-level, not project-level
-- Belongs in `php-cakephp/functional-designer` skill
-
-#### ❌ Mistake 2: Including Language Standards
-
-**Wrong**:
-```markdown
-## PHP Coding Standards
-
-All code should follow PSR-12...
-```
-
-**Fix**: Move to `~/.claude/skills/php/coding-standards/`
-- This is language-level, not project-level
-- Belongs in `php/coding-standards` skill
-
-#### ❌ Mistake 3: Rules Without Context
-
-**Wrong**:
-```markdown
-## Test Rules
-
-Tests should be high quality
-```
-
-**Fix**:
-```markdown
-## Project-Specific Test Requirements
-
-### Test Comment Format (Guarantees/Loss on Failure)
-
-**Reason**: Need to document business impact to justify test maintenance cost
-
-**Format**:
-```php
-/**
- * Guarantees: [What won't be guaranteed if this test doesn't exist]
- * Loss on Failure: [Business cost if test doesn't exist]
- */
-```
-
-**Example**: [Concrete example]
-
-**Implementation**: quality-reviewer agent with test-validator skill validates this format
-```
-
-### 6.2 config.yaml Mistakes
-
-#### ❌ Mistake 1: Reverse Skill Loading Order
-
-**Wrong**:
-```yaml
-agent_skills:
-  code-developer:
-    - php-cakephp/code-implementer      # Most specific first
-    - php/coding-standards
-    - generic/code-implementer          # Most abstract last
-```
-
-**Fix**:
-```yaml
-agent_skills:
-  code-developer:
-    - generic/code-implementer          # Most abstract first
-    - php/coding-standards
-    - php-cakephp/code-implementer      # Most specific last
-```
-
-**Reason**: Later-loaded skills override earlier ones. Most specific should load last.
-
-#### ❌ Mistake 2: Generic Agents in `agents` Section
-
-**Wrong**:
-```yaml
-agents:
-  code-developer:  # This is a generic agent!
+    - php-cakephp/test-validator
+
+# Skill-Specific Configuration
+skills:
+  test-validator:
     enabled: true
-    skills:
-      - php-cakephp/code-implementer
+    rules:
+      require_guarantee_section: true
+
+# Testing Configuration
+testing:
+  command: "docker compose run --rm web vendor/bin/phpunit"
+  rules:
+    documentation: "tests/README.md"
 ```
 
-**Fix**:
-```yaml
-agent_skills:
-  code-developer:  # Generic agents go in agent_skills
-    - generic/code-implementer
-    - php/coding-standards
-    - php-cakephp/code-implementer
+### Where to Put Project Information
 
-  quality-reviewer:  # quality-reviewer handles validation
-    - generic/code-reviewer
-    - php/coding-standards
-    - php-cakephp/test-validator  # Test validation via skill
+| Information | Location |
+|-------------|----------|
+| Agent-skill assignments | `.claude/config.yaml` |
+| Skill customization rules | `.claude/config.yaml` |
+| Test command | `.claude/config.yaml` |
+| Business rules, prohibited patterns | `CLAUDE.md` |
+| Project-specific test rules | `tests/README.md` |
+| Technology stack, architecture | `CLAUDE.md` |
 
-agents: {}  # Extremely rare - Generic agents + skills handle 99%+ of cases
-```
+### Skill Loading Order
 
-**Reason**: `agents` section is reserved for truly framework-unique workflows. Most validation use cases are handled by generic agents (e.g., quality-reviewer) with appropriate skills.
+Skills are loaded in priority order (later overrides earlier):
 
-#### ❌ Mistake 3: Duplicating Skill Content in config.yaml
+1. `generic/*` - Base universal patterns
+2. `{language}/*` - Language-specific patterns
+3. `{language}-{framework}/*` - Framework-specific patterns
 
-**Wrong**:
-```yaml
-agent_skills:
-  code-developer:
-    - generic/code-implementer
-    - php/coding-standards
+## License
 
-# Duplicating PSR-12 rules here (already in php/coding-standards skill)
-code_standards:
-  indentation: 4
-  line_length: 120
-  naming_convention: camelCase
-```
-
-**Fix**:
-```yaml
-agent_skills:
-  code-developer:
-    - generic/code-implementer
-    - php/coding-standards  # PSR-12 rules defined in skill
-
-# Only project-specific overrides
-code_standards:
-  custom_rule: [Project-specific value]
-```
-
-**Reason**: config.yaml binds agents and skills. Skill content exists in skill directories.
-
-#### ❌ Mistake 4: Missing Skill Layers
-
-**Wrong**:
-```yaml
-agent_skills:
-  code-developer:
-    - php-cakephp/code-implementer  # Skipping generic and language layers!
-```
-
-**Fix**:
-```yaml
-agent_skills:
-  code-developer:
-    - generic/code-implementer          # Layer 1: Universal
-    - php/coding-standards              # Layer 2: Language
-    - php-cakephp/code-implementer      # Layer 3: Framework
-```
-
-**Reason**: Each layer builds on previous layers. Skipping layers loses base patterns.
+MIT License - See [LICENSE](LICENSE) file for details.
 
 ---
 
-## 7. Troubleshooting
-
-### 7.1 Agent Cannot Find Skill
-
-**Symptom**: Agent reports "Skill X not found"
-
-**Check**:
-1. Does skill directory exist: `ls ~/.claude/skills/[scope]/[skill-name]/`
-2. Does SKILL.md file exist: `ls ~/.claude/skills/[scope]/[skill-name]/SKILL.md`
-3. Does config.yaml path match directory structure
-
-### 7.2 Wrong Pattern Applied
-
-**Symptom**: Agent outputs in wrong framework style
-
-**Check**:
-1. Skill loading order (generic → language → framework)
-2. tech_stack metadata matches actual project
-3. Most specific skill loads last
-
-### 7.3 Skills Not Loading
-
-**Symptom**: Agent behaves as if skills aren't loaded
-
-**Check**:
-1. Is config.yaml in correct location: `.claude/config.yaml`
-2. Is config.yaml syntax correct (YAML format)
-3. Does agent_skills section exist with content
-
----
-
-## 8. Validation Checklist
-
-### 8.1 CLAUDE.md Validation
-
-- [ ] **Scope check**: All rules are project-specific (not generic framework rules)
-- [ ] **Rationale documented**: Each rule explains why it exists
-- [ ] **Concrete examples**: Complex rules include examples
-- [ ] **Temporary/permanent marked**: Temporary cases clearly marked
-- [ ] **Cross-references**: Links to related documentation
-- [ ] **Priority explicit**: When to override AI general knowledge
-- [ ] **No duplication**: Doesn't duplicate skill content
-- [ ] **Maintenance plan**: Temporary rules have expiration conditions
-
-### 8.2 config.yaml Validation
-
-- [ ] **Complete metadata**: All required metadata fields filled
-- [ ] **Accurate tech stack**: Language/framework versions match reality
-- [ ] **Agent skill order**: Generic → Language → Framework → Project
-- [ ] **No redundant agents**: Only inherently tech-specific agents in `agents` section
-- [ ] **Skills exist**: All referenced skills have corresponding directories
-- [ ] **Accurate project paths**: All path settings match actual project structure
-- [ ] **Dependencies documented**: All inter-repository dependencies listed
-
----
-
-## 9. Decision Flowcharts
-
-### 9.1 Where to Define New Rules/Patterns
-
-```
-Define new rule/pattern
-  ↓
-[Q1] Applicable to all [language] projects?
-  ↓ YES → ~/.claude/skills/[language]/[skill-name]/
-  ↓ NO
-  ↓
-[Q2] Applicable to all [framework] projects?
-  ↓ YES → ~/.claude/skills/[language]-[FW]/[skill-name]/
-  ↓ NO
-  ↓
-[Q3] Project-specific rule?
-  ↓ YES → CLAUDE.md or config.yaml
-  ↓ NO
-  ↓
-Applicable to all projects
-  ↓
-~/.claude/skills/generic/[skill-name]/
-```
-
-### 9.2 Should You Create a New Agent
-
-```
-Feel need for new agent
-  ↓
-[Q1] Is this process universal regardless of tech stack?
-  ↓ YES → Create generic agent
-  |        Location: ~/.claude/agents/generic/[agent-name].md
-  |        config.yaml: Configure in agent_skills section
-  ↓ NO
-  ↓
-[Q2] Can existing generic agent handle this with skill changes?
-  ↓ YES → Create new skill
-  |        Location: ~/.claude/skills/[scope]/[skill-name]/
-  |        config.yaml: Add skill to existing agent
-  ↓ NO
-  ↓
-[Q3] Is this agent needed only for specific framework/project?
-  ↓ YES → Create tech-specific agent
-           Location: ~/.claude/agents/[language]-[FW]/[agent-name].md
-           config.yaml: Configure in agents section
-```
-
----
-
-## 10. Summary
-
-### 10.1 Key Principles
-
-1. **config.yaml = Binding Layer**
-   - Bind agents and skills
-   - Define tech stack
-   - Configure tech-specific agents
-
-2. **agent_skills = Skill Assignment**
-   - Map skills to generic agents
-   - Order matters: Generic → Language → Framework → Project
-   - Most specific skill takes priority
-
-3. **agents = Reserved for Truly Framework-Unique Workflows**
-   - **Use only when all other approaches are exhausted**
-   - In practice: Generic agents + skills handle 99%+ of use cases
-   - Consider creating a tech-specific agent ONLY if the workflow is:
-     - Unique to one framework (no analog in others)
-     - Requires runtime framework integration (not just CLI)
-     - Cannot be expressed as skill rules
-   - Generic agents belong in `agent_skills`
-
-4. **Skills Go in ~/.claude/skills/**
-   - Generic skills: `~/.claude/skills/generic/`
-   - Language skills: `~/.claude/skills/[language]/`
-   - Framework skills: `~/.claude/skills/[language]-[FW]/`
-
-5. **CLAUDE.md = Project-Specific Rules Only**
-   - Framework conventions → Skills
-   - Language standards → Skills
-   - Generic patterns → Skills
-
-### 10.2 Configuration Workflow
-
-```
-1. Define tech stack (repo_metadata.tech_stack)
-   ↓
-2. Assign skills to agents (agent_skills)
-   ↓
-3. Configure tech-specific agents (agents - if needed)
-   ↓
-4. Project-specific settings (paths, database, etc.)
-   ↓
-5. Validate configuration
-   ↓
-6. Test with actual agent startup
-```
-
-### 10.3 Key Points
-
-| Item | Description |
-|------|-------------|
-| **Improved Reusability** | Place skills in appropriate layers for multi-project reuse |
-| **Maintainability** | Generic agent + skill composition allows changes to propagate across projects |
-| **Extensibility** | New tech stack = Add skills + Update config only |
-| **Clear Responsibilities** | 4-layer model clarifies what goes where |
-
----
-
-## Appendix: Complete config.yaml Template
-
-```yaml
-# .claude/config.yaml
-
-repo_metadata:
-  name: [Project Name]
-  type: [Project Type]
-  description: [Description]
-
-  tech_stack:
-    language: [Language]
-    language_version: "[Version]"
-    framework: [Framework]
-    framework_version: "[Version]"
-    test_framework: [Test Framework]
-    test_framework_version: "[Version]"
-
-agent_skills:
-  requirement-analyst:
-    - generic/requirement-analyzer
-    - [language]/requirement-patterns
-    - [language]-[FW]/requirement-analyzer
-
-  design-architect:
-    - generic/software-designer
-    - [language]/architectural-patterns
-    - [language]-[FW]/functional-designer
-    - [language]-[FW]/database-designer
-
-  test-strategist:
-    - generic/test-planner
-    - [language]/testing-standards
-    - [language]-[FW]/test-case-designer
-
-  code-developer:
-    - generic/code-implementer
-    - [language]/coding-standards
-    - [language]/security-patterns
-    - [language]-[FW]/code-implementer
-
-  quality-reviewer:
-    - generic/code-reviewer
-    - [language]/coding-standards
-    - [language]/security-patterns
-    - [language]-[FW]/code-reviewer
-
-  deliverable-evaluator:
-    - generic/evaluation-criteria
-    - [language]-[FW]/deliverable-criteria
-
-agents:
-  # Inherently tech-specific agents only
-  [Tech-Specific Agent]:
-    enabled: true
-    [Agent-specific settings]
-    skills:
-      - [language]-[FW]/[skill-name]
-```
+**Version**: 2.0.0
+**Last Updated**: 2025-01-11

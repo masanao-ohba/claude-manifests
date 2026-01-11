@@ -435,6 +435,91 @@ public function testSomething(): void {
 }
 ```
 
+## Skipped Test Policy
+
+**STRICT RULE**: `@skip` or `markTestSkipped()` are ONLY allowed for features planned for future implementation.
+
+### Prohibited Patterns
+
+```php
+// ❌ PROHIBITED: Skipping due to complexity
+/**
+ * @skip Feature is too complex to test
+ */
+public function testComplexFeature(): void {
+    $this->markTestSkipped('Too complex');
+}
+
+// ❌ PROHIBITED: Skipping due to incomplete fixtures
+/**
+ * @skip Fixture data incomplete
+ */
+public function testWithIncompleteFixture(): void {
+    $this->markTestSkipped('Fixture incomplete');
+}
+
+// ❌ PROHIBITED: Skipping due to missing dependencies
+public function testExternalApiIntegration(): void {
+    $this->markTestSkipped('API not available in test env');
+}
+
+// ❌ PROHIBITED: Skipping due to intermittent failures
+public function testFlaky(): void {
+    $this->markTestSkipped('Test is flaky');
+}
+```
+
+### Allowed Pattern (ONLY for confirmed future features)
+
+```php
+// ✅ ALLOWED: Future feature with version/milestone reference
+/**
+ * @skip File upload feature will be implemented in v2.0 (TICKET-123)
+ */
+public function testFileUploadValidation(): void {
+    $this->markTestSkipped('File upload feature planned for v2.0 - see TICKET-123');
+}
+```
+
+### Why This Matters
+
+- **Skipped tests hide real coverage gaps**: They create false sense of completeness
+- **"Temporary" skips become permanent debt**: Most skipped tests are never fixed
+- **Tests must validate actual production behavior NOW**: If production code exists, test MUST execute it
+- **Coverage metrics become meaningless**: Skipped tests inflate reported coverage
+
+### What To Do Instead
+
+**If test fails**:
+1. **Fix the test**: Update assertions, add Fixture data, mock external dependencies correctly
+2. **Fix production code**: If behavior is wrong, fix the implementation
+3. **Remove the test**: If testing non-existent feature, delete the test entirely
+
+**If test is difficult**:
+1. **Break down the test**: Split complex test into smaller, focused tests
+2. **Improve test infrastructure**: Add helpers, factories, or fixtures
+3. **Mock external dependencies**: Email, API calls, file I/O should be mocked
+4. **Ask for help**: Don't skip - seek assistance to write proper test
+
+**If feature doesn't exist**:
+1. **Don't write the test**: Only test actual production code
+2. **Future features**: Only add @skip with ticket/version reference
+3. **Delete misaligned tests**: If test references non-existent code, remove it
+
+### Enforcement
+
+**NEVER skip to make test suite pass**. Skipping is NOT a valid solution for:
+- Incomplete fixtures → Add fixture data
+- Complex logic → Break down into smaller tests
+- Flaky tests → Fix the race condition or timing issue
+- Missing mocks → Properly mock external dependencies
+- Schema mismatches → Fix migration files and clear cache
+
+**Only valid reason to skip**: Documented future feature with:
+- Ticket/issue number
+- Target version or milestone
+- Explicit approval from team lead
+
 ## Test Execution Environment
 
 ### Docker-Based Test Execution (Recommended)

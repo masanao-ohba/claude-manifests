@@ -130,7 +130,7 @@ Configure::read('Common.display_flg.on')  // 1 - Display
 Configure::read('Common.display_flg.off') // 0 - Hidden
 
 // Account types
-Configure::read('Account.account_type.example')  // 1
+Configure::read('Account.account_type.toc')      // 1
 Configure::read('Account.account_type.master')   // 2
 Configure::read('Account.account_type.enduser')  // 3
 ```

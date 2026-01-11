@@ -200,6 +200,156 @@ Review Methods:
     - Early validation
 ```
 
+### 7. Achievement Indicators Framework
+
+**Achievement Indicators Generation:**
+```yaml
+Achievement Indicator Structure:
+  functional_completeness:
+    - indicator: "All user stories completed"
+      measurable: "Story points delivered"
+      threshold: "100% of committed stories"
+      priority: high
+
+    - indicator: "API contracts fulfilled"
+      measurable: "Endpoint tests pass"
+      threshold: "All endpoints return expected data"
+      priority: high
+
+  quality_standards:
+    - indicator: "Code quality maintained"
+      measurable: "Lint score"
+      threshold: "> 90/100"
+      priority: medium
+
+    - indicator: "Test coverage adequate"
+      measurable: "Coverage percentage"
+      threshold: ">= 80%"
+      priority: high
+
+  performance_criteria:
+    - indicator: "Response time acceptable"
+      measurable: "95th percentile latency"
+      threshold: "< 200ms"
+      priority: medium
+
+    - indicator: "Throughput sufficient"
+      measurable: "Requests per second"
+      threshold: "> 1000 RPS"
+      priority: low
+
+  security_requirements:
+    - indicator: "Authentication secure"
+      measurable: "Security audit pass"
+      threshold: "No critical vulnerabilities"
+      priority: high
+```
+
+**Success Criteria (Achievement Objectives) Generation:**
+```yaml
+Success Criteria Structure:
+  implementation_goals:
+    - objective: "Deliver core functionality"
+      success_criteria: "User can complete primary workflow"
+      measurement: "End-to-end test passes"
+
+    - objective: "Maintain system stability"
+      success_criteria: "No regression in existing features"
+      measurement: "Regression test suite passes"
+
+  quality_goals:
+    - objective: "Ensure maintainability"
+      success_criteria: "Code follows standards"
+      measurement: "Code review approval"
+
+    - objective: "Document adequately"
+      success_criteria: "All public APIs documented"
+      measurement: "Documentation coverage 100%"
+
+  business_goals:
+    - objective: "Meet user expectations"
+      success_criteria: "User acceptance criteria met"
+      measurement: "UAT sign-off received"
+
+    - objective: "Enable future growth"
+      success_criteria: "Architecture supports scaling"
+      measurement: "Load test validates 10x capacity"
+```
+
+**Acceptance Criteria Document Generation Template:**
+```yaml
+# Acceptance Criteria Document
+# Generated: {timestamp}
+# Project: {project_name}
+# Task: {task_description}
+# Size: {trivial|small|medium|large}
+
+acceptance_criteria:
+  task_classification:
+    size: {estimated_size}
+    complexity: {low|medium|high}
+    risk_level: {low|medium|high}
+
+  indicators: # Achievement Indicators - What we measure
+    completeness:
+      - id: "AI-COMP-001"
+        indicator: {description}
+        measurement_method: {how_to_measure}
+        pass_threshold: {specific_value}
+        priority: {must|should|could}
+        verification_agent: {which_agent_verifies}
+
+    quality:
+      - id: "AI-QUAL-001"
+        indicator: {description}
+        measurement_method: {automated|manual}
+        pass_threshold: {metric_value}
+        priority: {level}
+        verification_agent: {agent_name}
+
+    performance:
+      - id: "AI-PERF-001"
+        indicator: {description}
+        measurement_method: {tool_or_process}
+        pass_threshold: {numeric_threshold}
+        priority: {level}
+        verification_agent: {agent_name}
+
+  objectives: # Success Criteria - What we aim to achieve
+    primary:
+      - id: "SC-PRIM-001"
+        objective: {clear_goal}
+        success_definition: {when_considered_achieved}
+        responsible_agent: {implementation_agent}
+        deadline: {if_applicable}
+
+    secondary:
+      - id: "SC-SEC-001"
+        objective: {supporting_goal}
+        success_definition: {criteria}
+        responsible_agent: {agent_name}
+
+  evaluation_protocol:
+    stage_1_pre_implementation:
+      - action: "Generate acceptance criteria document"
+        responsible: "goal-clarifier"
+
+    stage_2_implementation:
+      - action: "Use acceptance criteria as implementation guide"
+        responsible: "code-developer"
+
+    stage_3_evaluation:
+      - action: "Evaluate against achievement indicators"
+        responsible: "deliverable-evaluator"
+        input: "Acceptance criteria document"
+
+    stage_4_iteration:
+      - action: "If FAIL, return to stage 2 with feedback"
+      - max_iterations: 3
+
+  output_location: ".work/requirements/acceptance-criteria-{timestamp}.yaml"
+```
+
 **Validation Criteria:**
 ```yaml
 Quality Attributes:
