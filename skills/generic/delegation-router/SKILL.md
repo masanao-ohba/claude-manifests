@@ -36,7 +36,8 @@ task-scale-evaluator:
   domain: "Task complexity assessment"
   receives_from:
     - main-orchestrator
-  delegates_to: null  # Returns analysis to caller
+  delegates_to:
+    - workflow-orchestrator  # Automatic chain via SubagentStop hook
   handles_directly:
     - "Scale classification"
     - "Workflow recommendation"
@@ -173,18 +174,22 @@ task_type_routing:
 scale_routing:
   trivial:
     can_handle: [main-orchestrator]
-    skip: [design-architect, quality-reviewer]
+    skip: [workflow-orchestrator, design-architect, quality-reviewer]
 
+  # All non-trivial tasks go through workflow-orchestrator (automatic chain from task-scale-evaluator)
   small:
+    entry_point: workflow-orchestrator
     required: [code-developer, test-executor, deliverable-evaluator]
     optional: [quality-reviewer]
     skip: [design-architect]
 
   medium:
+    entry_point: workflow-orchestrator
     required: [code-developer, test-executor, quality-reviewer, deliverable-evaluator]
     optional: [design-architect]
 
   large:
+    entry_point: workflow-orchestrator
     required: [design-architect, code-developer, test-executor, quality-reviewer, deliverable-evaluator]
     iterative: true
 ```

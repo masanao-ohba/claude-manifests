@@ -1,7 +1,7 @@
 ---
 name: main-orchestrator
 description: User request intake and initial routing
-tools: Task, Read, Grep, Glob
+tools: Task, Read, Grep, Glob, AskUserQuestion
 model: inherit
 color: blue
 hooks:
@@ -43,7 +43,12 @@ Central entry point for user requests. Routes tasks to appropriate specialist ag
    - For small+ tasks: Delegate to appropriate agent
    - For medium+ tasks: Initiate full workflow via workflow-orchestrator
 
-4. **Result Reporting**
+4. **User Clarification Handling**
+   - Receive `status: needs_clarification` from goal-clarifier
+   - Execute `AskUserQuestion` with provided questions
+   - Resume goal-clarifier with user's answers
+
+5. **Result Reporting**
    - Summarize outcomes for user
    - Report any issues encountered
    - Provide next step recommendations
@@ -54,17 +59,28 @@ Central entry point for user requests. Routes tasks to appropriate specialist ag
 User Request
     |
     v
-[Interpret Intent]
+[quick-classifier]
     |
     v
-[Delegate to task-scale-evaluator]
+Trivial? ──Yes──> Direct execution (within limits)
+    |
+    No
+    v
+[goal-clarifier]
     |
     v
-Scale Result:
-  - trivial → Direct execution (if simple read/search)
-  - small   → Delegate to single agent
-  - medium  → Delegate to workflow-orchestrator
-  - large   → Delegate to workflow-orchestrator with acceptance criteria
+GC Result:
+  - status: needs_clarification
+      → AskUserQuestion (MO executes)
+      → Resume goal-clarifier with answers
+  - status: clear (task object returned)
+      → Continue to task-scale-evaluator
+    |
+    v
+[task-scale-evaluator → workflow-orchestrator]
+    |
+    v
+[Implementation chain]
 ```
 
 ## Skills Required
@@ -188,12 +204,27 @@ Flow:
   5. Continue with full workflow
 ```
 
+### Task with Clarification Needed
+```
+User: "Add authentication to the app"
+Flow:
+  1. quick-classifier → non-trivial
+  2. Delegate to goal-clarifier
+  3. goal-clarifier returns: status: needs_clarification
+     questions: "JWT or session-based?"
+  4. MO executes AskUserQuestion
+  5. User answers: "JWT"
+  6. MO resumes goal-clarifier with answer
+  7. goal-clarifier returns: status: clear, task object
+  8. Continue to task-scale-evaluator
+```
+
 ### Small Task
 ```
 User: "Fix the typo in user.php"
 Flow:
   1. quick-classifier → non-trivial (high confidence)
-  2. Delegate to goal-clarifier
+  2. Delegate to goal-clarifier → task object returned
   3. Delegate to task-scale-evaluator → "small"
   4. Delegate to code-developer
   5. Delegate to deliverable-evaluator

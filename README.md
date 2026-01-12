@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Claude Code](https://img.shields.io/badge/Claude-Code-blueviolet)](https://claude.ai/code)
-[![Version](https://img.shields.io/badge/version-2.1.0-blue)](#)
+[![Version](https://img.shields.io/badge/version-2.2.0-blue)](#)
 [![Maintained](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](#)
 [![macOS](https://img.shields.io/badge/macOS-compatible-brightgreen)](#)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#)
@@ -41,23 +41,25 @@ git clone https://github.com/your-repo/claude-orchestration.git ~/.claude
 # 2. Install yq (required for config loading)
 brew install yq
 
-# 3. Copy templates to your project
-cp ~/.claude/templates/CLAUDE.md /path/to/your/project/
+# 3. Create project configuration
 mkdir -p /path/to/your/project/.claude
 cp ~/.claude/templates/.claude/config.yaml /path/to/your/project/.claude/
 
-# 4. Edit the templates for your project, then start Claude Code
+# 4. (Optional) Create CLAUDE.md for project-specific context
+# Add business rules, prohibited patterns, architecture decisions
+
+# 5. Start Claude Code
 cd /path/to/your/project
 claude
 ```
 
-That's it! The system activates automatically when Claude Code starts.
+That's it! Use `/dev-workflow` when you need the full orchestration system.
 
 ## Key Features
 
 | Feature | Description |
 |---------|-------------|
-| **Two-Phase Triage** | Simple requests execute immediately; complex ones get full analysis |
+| **On-Demand Workflow** | Invoke via `/dev-workflow` command - not always-on |
 | **Skill-Based Adaptation** | Same agents work with PHP, TypeScript, React, etc. via loadable skills |
 | **Quality Gates** | Automatic code review and acceptance criteria verification |
 | **Project Rules as Config** | Define constraints in YAML, enforced automatically |
@@ -87,25 +89,24 @@ ls ~/.claude/skills/    # Should show skill definitions
 
 ## Getting Started
 
-### 1. Copy templates to your project
+### 1. Create project configuration
 
 ```bash
-cp ~/.claude/templates/CLAUDE.md /path/to/project/CLAUDE.md
 mkdir -p /path/to/project/.claude
 cp ~/.claude/templates/.claude/config.yaml /path/to/project/.claude/config.yaml
 ```
 
 ### 2. Configure your project
 
-**CLAUDE.md** - Human-readable project context:
-- Business rules with reasons and code examples
-- Prohibited patterns with explanations
-- Architecture decisions
-
 **`.claude/config.yaml`** - Machine-readable settings:
 - Agent skill assignments (defines your tech stack)
 - Test commands
 - Constraints as natural language rules
+
+**(Optional) `CLAUDE.md`** - Human-readable project context:
+- Business rules with reasons and code examples
+- Prohibited patterns with explanations
+- Architecture decisions
 
 ### 3. Start Claude Code
 
@@ -114,9 +115,21 @@ cd /path/to/project
 claude
 ```
 
-The main-orchestrator automatically:
-1. Classifies your request (trivial or complex)
-2. Routes to appropriate agents
+By default, Claude Code operates in direct execution mode. For complex tasks, use:
+
+```
+/dev-workflow
+Implement user authentication with JWT tokens.
+
+Requirements:
+- Login/logout endpoints
+- Token refresh mechanism
+- Session management
+```
+
+The `/dev-workflow` command:
+1. Invokes the `main-orchestrator` agent
+2. Classifies and routes your request
 3. Enforces quality gates before completion
 
 ## Configuration
@@ -160,19 +173,22 @@ git:
 
 ### Where to Put Information
 
-| Information | Location | Read By |
-|-------------|----------|---------|
-| Business rules with code examples | `CLAUDE.md` | Human context |
-| Constraints as rules | `.claude/config.yaml` | Skills via hooks |
-| Test commands | `.claude/config.yaml` | test-implementer skill |
-| Agent skill assignments | `.claude/config.yaml` | Each agent |
+| Information | Location | Required |
+|-------------|----------|----------|
+| Agent skill assignments | `.claude/config.yaml` | Yes |
+| Constraints as rules | `.claude/config.yaml` | Yes |
+| Test commands | `.claude/config.yaml` | Yes |
+| Business rules with code examples | `CLAUDE.md` (optional) | No |
 
 ## Architecture Overview
+
+The orchestration system is invoked via the `/dev-workflow` command. This triggers the `main-orchestrator` agent which coordinates the workflow below.
 
 ```mermaid
 flowchart TD
     subgraph Entry["🚪 Entry Layer"]
-        A[User Request] --> B[quick-classifier]
+        A[User Request] --> B0[main-orchestrator]
+        B0 --> B[quick-classifier]
     end
 
     subgraph Analysis["🔍 Analysis Layer"]
@@ -183,13 +199,11 @@ flowchart TD
         H -->|Yes| I[main-orchestrator<br/>Ask User]
         I --> G
         H -->|No| J[task-scale-evaluator]
-        J --> K{Scale?}
     end
 
     subgraph Implementation["⚙️ Implementation Layer"]
-        K -->|Complex| M[workflow-orchestrator]
-        K -->|Simple| L[code-developer]
-        M --> L
+        J -->|task object| M[workflow-orchestrator]
+        M --> L[code-developer]
         L --> N[test-executor]
         N --> O{Tests Pass?}
         O -->|No| P[test-failure-debugger]
@@ -202,8 +216,6 @@ flowchart TD
         R --> S{Criteria<br/>Met?}
         S -->|No| L
     end
-
-    G -.->|Acceptance Criteria| R
 
     subgraph Report["📋 Report Layer"]
         S -->|Yes| T[main-orchestrator<br/>Report Results]
@@ -218,24 +230,33 @@ flowchart TD
     style Report fill:#f3e5f5,stroke:#7b1fa2
 ```
 
+**Data Flow**: `task` object (with `acceptance_criteria`) flows through GC → TSE → WO → DE via prompt.
+
 ### How It Works
 
-1. **Entry**: Your request goes to `quick-classifier`
-2. **Triage**: Simple tasks execute directly; complex ones go through full analysis
-3. **Implementation**: `code-developer` writes code, `test-executor` runs tests
-4. **Quality**: `quality-reviewer` checks code, `deliverable-evaluator` verifies acceptance criteria
-5. **Report**: Results returned to you
+When you invoke `/dev-workflow`:
+
+1. **Entry**: Your request is handled by `main-orchestrator` agent
+2. **Classification**: `quick-classifier` determines if request is trivial or complex
+3. **Triage**: Trivial tasks execute directly; complex ones go through `goal-clarifier` (which defines `task` with `acceptance_criteria`)
+4. **Implementation**: `task-scale-evaluator` passes `task` object to `workflow-orchestrator`, which manages `code-developer` → `test-executor`
+5. **Quality**: `quality-reviewer` checks code, `deliverable-evaluator` extracts `acceptance_criteria` from `task` and verifies
+6. **Report**: Results returned to you
+
+**Note**: If `goal-clarifier` needs user input, it returns to `main-orchestrator` with questions; MO asks user and resumes GC.
+
+**Without `/dev-workflow`**: Claude Code operates in direct execution mode with full tool access.
 
 ### Key Agents
 
 | Agent | What It Does |
 |-------|--------------|
 | quick-classifier | Decides if request is simple or complex |
-| goal-clarifier | Defines what "done" looks like (acceptance criteria) |
+| goal-clarifier | Defines `task` object with `acceptance_criteria` |
 | code-developer | Writes code following loaded skills |
 | test-executor | Runs tests and reports results |
 | quality-reviewer | Reviews code for quality and security |
-| deliverable-evaluator | Final check against acceptance criteria |
+| deliverable-evaluator | Extracts `acceptance_criteria` from `task` and evaluates |
 
 ## Reference
 
@@ -379,5 +400,5 @@ MIT License - See [LICENSE](LICENSE) file for details.
 
 ---
 
-**Version**: 2.1.0
+**Version**: 2.2.0
 **Last Updated**: 2025-01-12

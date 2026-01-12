@@ -67,42 +67,45 @@ PASS → Report completion to main-orchestrator
 FAIL → Route back to appropriate agent for fixes
 ```
 
-## Acceptance Criteria Integration
+## Task Object Handling
 
-### Receiving Criteria
+### Receiving Task
 
-When invoked, you receive `acceptance_criteria` from the upstream chain (goal-clarifier → task-scale-evaluator → you).
+You receive a `task` object from TSE (originated from goal-clarifier). This object contains `acceptance_criteria` as metadata.
 
 ```yaml
-input:
-  task_description: "<what to implement>"
-  acceptance_criteria:
+task:
+  description: "<what to implement>"
+  goals: [...]
+  acceptance_criteria:    # ← Part of task, not separate
     - criterion: "<what must be true>"
       verification: "<how to verify>"
+      priority: high|medium|low
+  assumptions: [...]
+
+evaluation:               # ← From TSE
+  task_scale: small|medium|large
+  subtasks: [...]
 ```
 
-### Passing Criteria to Evaluator
+### Passing Task to Evaluator
 
-When delegating to deliverable-evaluator, you MUST include the acceptance_criteria:
+When delegating to deliverable-evaluator, pass the ENTIRE `task` object:
 
 ```yaml
 Task tool call:
   subagent_type: "deliverable-evaluator"
   description: "Evaluate deliverable"
   prompt: |
-    Evaluate the implementation against these acceptance criteria:
+    Evaluate the implementation.
 
-    Criteria:
-    {{acceptance_criteria}}
+    Task:
+    {{task}}              # ← Includes acceptance_criteria
 
-    Implementation summary:
-    {{code_developer_output}}
-
-    Test results:
-    {{test_executor_output}}
-
-    Quality review:
-    {{quality_reviewer_output}}
+    Evidence:
+    - Implementation: {{code_developer_output}}
+    - Tests: {{test_executor_output}}
+    - Quality: {{quality_reviewer_output}}
 ```
 
 ## Responsibilities
@@ -122,10 +125,10 @@ Task tool call:
    - Block completion if chain is incomplete
    - Re-route on failures
 
-4. **Criteria Propagation**
-   - Receive acceptance_criteria from upstream
-   - Pass criteria to deliverable-evaluator
-   - Ensure evaluation is criteria-based
+4. **Task Propagation**
+   - Receive `task` object from TSE (contains acceptance_criteria)
+   - Pass entire `task` object to deliverable-evaluator
+   - Do NOT modify or interpret acceptance_criteria (just pass through)
 
 ## Delegation Templates
 
@@ -169,8 +172,10 @@ Task:
   subagent_type: "deliverable-evaluator"
   description: "Evaluate deliverable"
   prompt: |
-    Evaluate against acceptance criteria:
-    <criteria>
+    Evaluate the implementation.
+
+    Task:
+    <entire task object from GC>  # Contains acceptance_criteria
 
     Evidence:
     - Implementation: <summary>
@@ -218,19 +223,21 @@ workflow_report:
 ```
 main-orchestrator
     ↓
-goal-clarifier (defines acceptance_criteria)
+goal-clarifier (defines task with acceptance_criteria)
     ↓
-task-scale-evaluator
+task-scale-evaluator (passes task through)
     ↓
-workflow-orchestrator (this agent - receives criteria)
+workflow-orchestrator (this agent - receives task, passes to DE)
     ↓
 [manages mandatory agent chain]
     ↓
-deliverable-evaluator (evaluates against criteria)
+deliverable-evaluator (extracts acceptance_criteria from task)
     ↓
 PASS → Report to main-orchestrator
 FAIL → Re-route for fixes
 ```
+
+**Data Flow**: `task` object (with `acceptance_criteria`) flows GC → TSE → WO → DE unchanged.
 
 ## NOT Responsible For (ENFORCED)
 

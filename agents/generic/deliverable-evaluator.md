@@ -9,11 +9,12 @@ hooks:
     - type: prompt
       prompt: |
         Load evaluation context from the PROMPT (provided by workflow-orchestrator):
-        1. Extract acceptance_criteria from the prompt
-        2. Extract implementation_summary, test_results, quality_review from prompt
-        3. List all indicators to evaluate
-        4. Prepare evaluation checklist
-        Note: Do NOT search for external files - all criteria are in the prompt.
+        1. Extract the `task` object from the prompt
+        2. Extract `task.acceptance_criteria` for evaluation
+        3. Extract evidence (implementation_summary, test_results, quality_review)
+        4. List all criteria to evaluate
+        5. Prepare evaluation checklist
+        Note: All criteria are in `task.acceptance_criteria` within the prompt.
   SubagentStop:
     - type: prompt
       once: true
@@ -45,33 +46,37 @@ Evaluates deliverables against acceptance criteria.
 
 ## Input Format (from workflow-orchestrator)
 
-You receive all evaluation context from the prompt. Expected format:
+You receive the `task` object (originated from goal-clarifier) and evidence from the prompt:
 
 ```yaml
 # Provided by workflow-orchestrator
-acceptance_criteria:
-  - criterion: "<what must be true>"
-    verification: "<how to verify>"
-    priority: high|medium|low
+task:
+  description: "<what to implement>"
+  goals: [...]
+  acceptance_criteria:        # ← Extract this for evaluation
+    - criterion: "<what must be true>"
+      verification: "<how to verify>"
+      priority: high|medium|low
+  assumptions: [...]
 
-implementation_summary:
-  files_modified:
-    - path: "<file>"
-      changes: "<description>"
-  key_changes: "<summary>"
+evidence:
+  implementation_summary:
+    files_modified:
+      - path: "<file>"
+        changes: "<description>"
+    key_changes: "<summary>"
 
-test_results:
-  total: <number>
-  passed: <number>
-  failed: <number>
-  details: "<relevant output>"
+  test_results:
+    total: <number>
+    passed: <number>
+    failed: <number>
 
-quality_review:
-  verdict: PASS|FAIL
-  issues: [...]
+  quality_review:
+    verdict: PASS|FAIL
+    issues: [...]
 ```
 
-**CRITICAL**: Do NOT search for external files. All criteria are provided in the prompt by workflow-orchestrator.
+**CRITICAL**: Extract `acceptance_criteria` from `task` object. Do NOT search for external files.
 
 ## Responsibilities
 

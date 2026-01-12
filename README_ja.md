@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Claude Code](https://img.shields.io/badge/Claude-Code-blueviolet)](https://claude.ai/code)
-[![Version](https://img.shields.io/badge/version-2.1.0-blue)](#)
+[![Version](https://img.shields.io/badge/version-2.2.0-blue)](#)
 [![Maintained](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](#)
 [![macOS](https://img.shields.io/badge/macOS-compatible-brightgreen)](#)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#)
@@ -41,23 +41,25 @@ git clone https://github.com/your-repo/claude-orchestration.git ~/.claude
 # 2. yq をインストール（設定読み込みに必要）
 brew install yq
 
-# 3. テンプレートをプロジェクトにコピー
-cp ~/.claude/templates/CLAUDE.md /path/to/your/project/
+# 3. プロジェクト設定を作成
 mkdir -p /path/to/your/project/.claude
 cp ~/.claude/templates/.claude/config.yaml /path/to/your/project/.claude/
 
-# 4. テンプレートをプロジェクト用に編集し、Claude Codeを起動
+# 4. (オプション) プロジェクト固有のコンテキスト用にCLAUDE.mdを作成
+# ビジネスルール、禁止パターン、アーキテクチャの決定事項を追加
+
+# 5. Claude Codeを起動
 cd /path/to/your/project
 claude
 ```
 
-これだけです！Claude Code起動時にシステムが自動的にアクティブになります。
+これだけです！完全なオーケストレーションシステムが必要な場合は `/dev-workflow` を使用します。
 
 ## 主な特徴
 
 | 機能 | 説明 |
 |------|------|
-| **2フェーズトリアージ** | 単純なリクエストは即座に実行、複雑なものは完全な分析を実施 |
+| **オンデマンドワークフロー** | `/dev-workflow` コマンドで起動 - 常時有効ではない |
 | **スキルベースの適応** | 同じエージェントがPHP、TypeScript、Reactなど様々な技術にスキル経由で対応 |
 | **品質ゲート** | 自動コードレビューと受入基準の検証 |
 | **設定としてのプロジェクトルール** | YAMLで制約を定義し、自動的に強制 |
@@ -87,25 +89,24 @@ ls ~/.claude/skills/    # スキル定義が表示されるはず
 
 ## 使い方
 
-### 1. テンプレートをプロジェクトにコピー
+### 1. プロジェクト設定を作成
 
 ```bash
-cp ~/.claude/templates/CLAUDE.md /path/to/project/CLAUDE.md
 mkdir -p /path/to/project/.claude
 cp ~/.claude/templates/.claude/config.yaml /path/to/project/.claude/config.yaml
 ```
 
 ### 2. プロジェクトを設定
 
-**CLAUDE.md** - 人間が読むプロジェクトコンテキスト：
-- 理由とコード例を含むビジネスルール
-- 説明付きの禁止パターン
-- アーキテクチャの決定事項
-
 **`.claude/config.yaml`** - 機械が読む設定：
 - エージェントのスキル割り当て（技術スタックを定義）
 - テストコマンド
 - 自然言語による制約ルール
+
+**(オプション) `CLAUDE.md`** - 人間が読むプロジェクトコンテキスト：
+- 理由とコード例を含むビジネスルール
+- 説明付きの禁止パターン
+- アーキテクチャの決定事項
 
 ### 3. Claude Codeを起動
 
@@ -114,9 +115,21 @@ cd /path/to/project
 claude
 ```
 
-main-orchestratorが自動的に：
-1. リクエストを分類（単純か複雑か）
-2. 適切なエージェントにルーティング
+デフォルトでは、Claude Codeは直接実行モードで動作します。複雑なタスクには：
+
+```
+/dev-workflow
+JWT認証でユーザー認証機能を実装してください。
+
+要件:
+- ログイン/ログアウトエンドポイント
+- トークンリフレッシュ機能
+- セッション管理
+```
+
+`/dev-workflow` コマンドは：
+1. `main-orchestrator` エージェントを起動
+2. リクエストを分類してルーティング
 3. 完了前に品質ゲートを強制
 
 ## 設定
@@ -160,19 +173,22 @@ git:
 
 ### 情報の配置場所
 
-| 情報 | 配置場所 | 読み込み元 |
-|------|----------|-----------|
-| コード例付きのビジネスルール | `CLAUDE.md` | 人間向けコンテキスト |
-| ルールとしての制約 | `.claude/config.yaml` | スキルがフック経由で読込 |
-| テストコマンド | `.claude/config.yaml` | test-implementerスキル |
-| エージェントのスキル割当 | `.claude/config.yaml` | 各エージェント |
+| 情報 | 配置場所 | 必須 |
+|------|----------|-----|
+| エージェントのスキル割当 | `.claude/config.yaml` | Yes |
+| ルールとしての制約 | `.claude/config.yaml` | Yes |
+| テストコマンド | `.claude/config.yaml` | Yes |
+| コード例付きのビジネスルール | `CLAUDE.md` (オプション) | No |
 
 ## アーキテクチャ概要
+
+オーケストレーションシステムは `/dev-workflow` コマンドで起動します。これにより `main-orchestrator` エージェントが以下のワークフローを調整します。
 
 ```mermaid
 flowchart TD
     subgraph Entry["🚪 エントリー層"]
-        A[ユーザーリクエスト] --> B[quick-classifier]
+        A[ユーザーリクエスト] --> B0[main-orchestrator]
+        B0 --> B[quick-classifier]
     end
 
     subgraph Analysis["🔍 分析層"]
@@ -183,13 +199,11 @@ flowchart TD
         H -->|Yes| I[main-orchestrator<br/>ユーザーに質問]
         I --> G
         H -->|No| J[task-scale-evaluator]
-        J --> K{Scale?}
     end
 
     subgraph Implementation["⚙️ 実装層"]
-        K -->|複雑| M[workflow-orchestrator]
-        K -->|シンプル| L[code-developer]
-        M --> L
+        J -->|task object| M[workflow-orchestrator]
+        M --> L[code-developer]
         L --> N[test-executor]
         N --> O{テスト成功?}
         O -->|No| P[test-failure-debugger]
@@ -202,8 +216,6 @@ flowchart TD
         R --> S{基準を<br/>満たす?}
         S -->|No| L
     end
-
-    G -.->|達成条件| R
 
     subgraph Report["📋 報告層"]
         S -->|Yes| T[main-orchestrator<br/>結果を報告]
@@ -218,24 +230,33 @@ flowchart TD
     style Report fill:#f3e5f5,stroke:#7b1fa2
 ```
 
+**データフロー**: `task`オブジェクト（`acceptance_criteria`を含む）がGC → TSE → WO → DEへprompt経由で流れます。
+
 ### 動作の仕組み
 
-1. **エントリー**: リクエストが`quick-classifier`に送られる
-2. **トリアージ**: 単純なタスクは直接実行、複雑なものは完全な分析を実施
-3. **実装**: `code-developer`がコードを書き、`test-executor`がテストを実行
-4. **品質**: `quality-reviewer`がコードをチェック、`deliverable-evaluator`が受入基準を検証
-5. **報告**: 結果があなたに返される
+`/dev-workflow` を実行すると：
+
+1. **エントリー**: リクエストが`main-orchestrator`エージェントに送られる
+2. **分類**: `quick-classifier`がリクエストが単純か複雑かを判定
+3. **トリアージ**: 単純なタスクは直接実行、複雑なものは`goal-clarifier`（`acceptance_criteria`を含む`task`を定義）を経由
+4. **実装**: `task-scale-evaluator`が`task`オブジェクトを`workflow-orchestrator`に渡し、`code-developer` → `test-executor`を管理
+5. **品質**: `quality-reviewer`がコードをチェック、`deliverable-evaluator`が`task`から`acceptance_criteria`を抽出して検証
+6. **報告**: 結果があなたに返される
+
+**注意**: `goal-clarifier`がユーザー入力を必要とする場合、質問を`main-orchestrator`に返し、MOがユーザーに質問してGCを再開します。
+
+**`/dev-workflow`なしの場合**: Claude Codeは直接実行モードで動作し、すべてのツールにアクセスできます。
 
 ### 主要エージェント
 
 | エージェント | 役割 |
 |-------------|------|
 | quick-classifier | リクエストが単純か複雑かを判定 |
-| goal-clarifier | 「完了」の定義（受入基準）を策定 |
+| goal-clarifier | `acceptance_criteria`を含む`task`オブジェクトを定義 |
 | code-developer | ロードされたスキルに従ってコードを記述 |
 | test-executor | テストを実行し結果を報告 |
 | quality-reviewer | コード品質とセキュリティをレビュー |
-| deliverable-evaluator | 受入基準との最終チェック |
+| deliverable-evaluator | `task`から`acceptance_criteria`を抽出して評価 |
 
 ## リファレンス
 
@@ -379,5 +400,5 @@ MIT License - 詳細は[LICENSE](LICENSE)ファイルを参照してください
 
 ---
 
-**バージョン**: 2.1.0
+**バージョン**: 2.2.0
 **最終更新日**: 2025-01-12
