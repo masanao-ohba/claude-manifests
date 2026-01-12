@@ -8,6 +8,9 @@ hooks:
         if command -v yq &> /dev/null && [ -f ".claude/config.yaml" ]; then
           echo "=== Testing Rules ==="
           yq -o=json '.testing' .claude/config.yaml 2>/dev/null || true
+          echo "=== Testing Constraints ==="
+          yq -o=json '.constraints.testing' .claude/config.yaml 2>/dev/null || true
+          yq -o=json '.constraints.business_rules' .claude/config.yaml 2>/dev/null || true
         fi
 ---
 

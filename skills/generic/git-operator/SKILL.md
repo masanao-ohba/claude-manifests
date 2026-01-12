@@ -1,6 +1,15 @@
 ---
 name: git-operator
 description: Manages Git operations including commits with appropriate conventions, combining related changes logically and following project-specific policies
+hooks:
+  SessionStart:
+    - type: command
+      command: |
+        if command -v yq &> /dev/null && [ -f ".claude/config.yaml" ]; then
+          echo "=== Git Configuration ==="
+          yq -o=json '.output.language' .claude/config.yaml 2>/dev/null || true
+          yq -o=json '.git' .claude/config.yaml 2>/dev/null || true
+        fi
 ---
 
 # Generic Git Operator

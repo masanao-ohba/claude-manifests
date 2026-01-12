@@ -1,6 +1,16 @@
 ---
 name: code-implementer
 description: Implements production code for PHP/CakePHP applications based on functional design specifications
+hooks:
+  SessionStart:
+    - type: command
+      command: |
+        if command -v yq &> /dev/null && [ -f ".claude/config.yaml" ]; then
+          echo "=== Architecture Constraints ==="
+          yq -o=json '.constraints.architecture' .claude/config.yaml 2>/dev/null || true
+          echo "=== Coding Standards ==="
+          yq -o=json '.coding_standards' .claude/config.yaml 2>/dev/null || true
+        fi
 ---
 
 # Code Implementer

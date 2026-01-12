@@ -2,90 +2,155 @@
 # Claude Code Project Configuration Template
 # =============================================================================
 # Copy this file to your project's .claude/config.yaml
+#
+# KEY MAPPING: Each key is read by specific Skills via SessionStart hooks.
+# Keys without a mapped Skill are read as Context (documentation reference).
 # =============================================================================
 
 # -----------------------------------------------------------------------------
 # Output Settings
 # -----------------------------------------------------------------------------
+# Read by: generic/git-operator (Hook)
 output:
-  language: en  # en | ja
-
-# -----------------------------------------------------------------------------
-# Git Operations
-# -----------------------------------------------------------------------------
-git:
-  operations:
-    commit: user_request_only    # auto | user_request_only | prohibited
-    push: user_request_only      # auto | user_request_only | prohibited
-    branch: user_request_only    # auto | user_request_only | prohibited
-  commit_message:
-    format: conventional         # conventional | simple | custom
-    scope_required: false
-  claude_signature: false        # Include Claude Code signature in commits
-  allow_push: false              # Allow auto-push after commit
-
-# -----------------------------------------------------------------------------
-# Agent Configuration
-# -----------------------------------------------------------------------------
-agents:
-  code-developer:
-    skills:
-      # Generic skills (always included implicitly)
-      # - generic/code-reviewer
-      # Language-specific skills
-      - php/coding-standards
-      # Framework-specific skills
-      - php-cakephp/code-implementer
-
-  quality-reviewer:
-    skills:
-      - generic/code-reviewer
-      - php-cakephp/test-validator
-
-  test-executor:
-    skills:
-      - generic/test-implementer
-
-# -----------------------------------------------------------------------------
-# Skill Configuration
-# -----------------------------------------------------------------------------
-skills:
-  code-reviewer:
-    focus_areas:
-      security: true
-      performance: true
-      maintainability: true
-      testing: true
-    severity:
-      block_on: [critical, security]
-      warn_on: [minor, style]
-    custom_rules: []
-      # - name: "no-console-log"
-      #   pattern: "console.log"
-      #   severity: minor
-      #   message: "Remove console.log statements"
-
-  test-validator:
-    enabled: true
-    rules:
-      require_guarantee_section: true
+  language: en  # en | ja - Commit message language
 
 # -----------------------------------------------------------------------------
 # Testing Configuration
 # -----------------------------------------------------------------------------
+# Read by: generic/test-implementer (Hook), php-cakephp/test-validator (Context)
 testing:
   command: "docker compose run --rm web vendor/bin/phpunit"
-  docker_command: "docker compose run --rm web"
   rules:
     documentation: "tests/README.md"
-    prohibitions:
-      - "Configure::write() でテスト設定上書き禁止"
-      - "本番コードのモック禁止"
 
 # -----------------------------------------------------------------------------
 # Task Scaling Configuration
 # -----------------------------------------------------------------------------
+# Read by: generic/task-scaler (Hook)
 task_scaling:
   thresholds:
-    simple_max_files: 3
-    simple_max_lines: 100
+    trivial_max: 5
+    small_max: 15
+    medium_max: 30
+
+# -----------------------------------------------------------------------------
+# Coding Standards
+# -----------------------------------------------------------------------------
+# Read by: php/coding-standards (Hook), typescript/coding-standards (Hook)
+coding_standards:
+  standard: PSR-12       # PSR-12 | Airbnb | Standard
+  phpstan_level: 7       # 0-9
+  require_type_hints: true
+  max_line_length: 120
+
+# -----------------------------------------------------------------------------
+# Git Operations
+# -----------------------------------------------------------------------------
+# Read by: generic/git-operator (Hook)
+git:
+  operations:
+    commit: user_request_only    # auto | user_request_only | prohibited
+    push: user_request_only      # auto | user_request_only | prohibited
+  commit_message:
+    format: conventional         # conventional | simple | custom
+
+# -----------------------------------------------------------------------------
+# Agent-Skill Assignments
+# -----------------------------------------------------------------------------
+# Read by: Each agent loads skills from this configuration (Context)
+agents:
+  workflow-orchestrator:
+    skills:
+      - generic/workflow-patterns
+
+  goal-clarifier:
+    skills:
+      - generic/requirement-analyzer
+      # Add language/framework specific skills:
+      # - php/requirement-patterns
+      # - php-cakephp/requirement-analyzer
+
+  design-architect:
+    skills:
+      - generic/software-designer
+      # Add language/framework specific skills:
+      # - php/architectural-patterns
+      # - php-cakephp/functional-designer
+
+  test-strategist:
+    skills:
+      - generic/test-planner
+      # Add language/framework specific skills:
+      # - php/testing-standards
+      # - php-cakephp/test-case-designer
+
+  code-developer:
+    skills:
+      - generic/code-implementer
+      # Add language/framework specific skills:
+      # - php/coding-standards
+      # - php-cakephp/code-implementer
+
+  quality-reviewer:
+    skills:
+      - generic/code-reviewer
+      # Add language/framework specific skills:
+      # - php/coding-standards
+      # - php-cakephp/code-reviewer
+
+  deliverable-evaluator:
+    skills:
+      - generic/evaluation-criteria
+      # Add framework specific skills:
+      # - php-cakephp/deliverable-criteria
+
+# -----------------------------------------------------------------------------
+# Project Constraints (Natural Language Rules)
+# -----------------------------------------------------------------------------
+# Read by: generic/test-implementer (Hook), generic/code-reviewer (Hook),
+#          php-cakephp/test-validator (Hook), php-cakephp/code-implementer (Hook),
+#          php-cakephp/code-reviewer (Hook)
+#
+# IMPORTANT: Define rules as natural language prompts, NOT boolean flags.
+# Each rule should explain WHAT is prohibited/required clearly.
+constraints:
+  business_rules:
+    - "Tests must execute the same code path as production."
+    # Add project-specific business rules:
+    # - "Database schema is defined ONLY in migration files."
+
+  testing:
+    prohibited:
+      # Add project-specific test prohibitions:
+      # - "Do not use Configure::write() in test code."
+      # - "Do not mock production code. Only mock external dependencies."
+      # - "Do not create test data with Table::newEntity() directly. Use Fixture."
+    required:
+      # Add project-specific test requirements:
+      # - "Every test method must have @covers annotation."
+      # - "Tests must run in Docker container."
+
+  schema:
+    prohibited:
+      # Add project-specific schema prohibitions:
+      # - "Do not override schema in Model classes using _initializeSchema()."
+
+  # Architecture constraints for feature development
+  # Read by: php-cakephp/code-implementer (Hook), php-cakephp/code-reviewer (Hook)
+  architecture:
+    layers:
+      - "Controller must not contain business logic - delegate to Service or Model."
+      # Add project-specific layer rules:
+      # - "Model contains data access and domain business rules."
+      # - "Service layer for complex cross-model operations."
+      # - "View templates must not contain PHP business logic."
+    dependencies:
+      - "Controller depends on Model/Service, never the reverse."
+      # Add project-specific dependency rules:
+      # - "Service depends on Model, never on Controller."
+      # - "No circular dependencies between Models."
+    separation_of_concerns:
+      # Add project-specific separation rules:
+      # - "Helpers for view logic only."
+      # - "Components for controller-shared functionality."
+      # - "Behaviors for model-shared functionality."

@@ -92,41 +92,7 @@ All checks must PASS before merge:
 | All tests pass | test-executor | YES |
 | No static analysis errors | quality-reviewer | YES |
 | Coding standards compliance | quality-reviewer | YES |
-| Test comment format compliance | quality-reviewer | YES |
 | Security check | quality-reviewer | YES |
-
----
-
-## Review Guidelines
-
-### Code Review (referenced by quality-reviewer)
-
-| Aspect | Check Items |
-|--------|-------------|
-| Security | SQL injection, XSS, CSRF vulnerabilities |
-| Performance | N+1 queries, large data processing considerations |
-| Error Handling | No silent failures, appropriate logging |
-| Readability | Naming conventions, comments, separation of concerns |
-| Testability | Dependency injection, mockable design |
-
-### Test Review (referenced by test-strategist)
-
-| Aspect | Check Items |
-|--------|-------------|
-| Coverage | Major paths are covered |
-| Boundary Values | Edge cases are tested |
-| Error Cases | Error scenarios are verified |
-| Independence | No inter-test dependencies |
-| Reproducibility | No execution order dependencies |
-
-### Deliverable Evaluation (referenced by deliverable-evaluator)
-
-| Aspect | Check Items |
-|--------|-------------|
-| Requirements Met | Satisfies defined functionality |
-| No Regression | No impact on existing features |
-| Documentation | Necessary updates completed |
-| Acceptance Criteria | Meets completion criteria |
 
 ---
 
@@ -144,12 +110,6 @@ All checks must PASS before merge:
 {{LINT_COMMAND}}
 ```
 
-### Build
-
-```bash
-{{BUILD_COMMAND}}
-```
-
 ---
 
 ## Historical Context
@@ -160,37 +120,50 @@ All checks must PASS before merge:
 
 ---
 
+## Configuration Files
+
+### Responsibility Separation
+
+| File | Purpose | Content Type |
+|------|---------|--------------|
+| `CLAUDE.md` | Human-readable context | Project overview, code examples, reasons |
+| `.claude/config.yaml` | Machine-readable config | Keys read by Skills via hooks |
+
+### .claude/config.yaml Key Mapping
+
+Keys are read by Skills via SessionStart hooks:
+
+| Key | Read by Skill | Purpose |
+|-----|---------------|---------|
+| `output.language` | generic/git-operator | Commit message language |
+| `testing.*` | generic/test-implementer | Test execution rules |
+| `task_scaling.thresholds` | generic/task-scaler | Task scale classification |
+| `coding_standards` | php/coding-standards, php-cakephp/code-implementer | Coding standards settings |
+| `git.*` | generic/git-operator | Git operation policy |
+| `constraints.testing` | generic/test-implementer, php-cakephp/test-validator | Test constraints |
+| `constraints.architecture` | php-cakephp/code-implementer, php-cakephp/code-reviewer | Architecture constraints |
+| `constraints.*` | generic/code-reviewer | All project constraints |
+| `agents.<name>.skills` | Each agent (Context) | Skills to load |
+
+### What Goes Where
+
+**In CLAUDE.md (this file)**:
+- Project overview and architecture
+- Business rules with **reasons and context**
+- Prohibited patterns with **code examples**
+- Historical decisions and rationale
+
+**In .claude/config.yaml**:
+- Machine-parseable settings (commands, thresholds)
+- Agent-skill assignments
+- Constraints as **natural language rules** (without code examples)
+
+---
+
 ## Related Documentation
 
-- `.claude/config.yaml` - Testing configuration (only fields read by Skills)
+- `.claude/config.yaml` - Project configuration (keys read by Skills)
 - `tests/README.md` - Project-specific test rules
 - `~/.claude/CLAUDE.md` - Global main-orchestrator configuration
 - `~/.claude/agents/` - Agent definitions
 - `~/.claude/skills/` - Skill definitions
-
----
-
-## Configuration Note
-
-`.claude/config.yaml` defines:
-1. **agent_skills** - Which skills are used by which agents (implicitly defines tech stack)
-2. **skills.\*** - Skill-specific customization rules
-3. **testing.\*** - Test execution configuration
-
-```yaml
-agent_skills:
-  code-developer:
-    - php/coding-standards
-    - php-cakephp/code-implementer
-
-skills:
-  test-validator:
-    enabled: true
-
-testing:
-  command: "{{TEST_COMMAND}}"
-  rules:
-    documentation: "tests/README.md"
-```
-
-Project metadata (architecture, business rules, prohibited patterns) should be documented in this CLAUDE.md file.

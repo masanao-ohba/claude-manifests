@@ -1,6 +1,14 @@
 ---
 name: code-reviewer
 description: Code review methodology, severity classification, and quality assessment patterns
+hooks:
+  SessionStart:
+    - type: command
+      command: |
+        if command -v yq &> /dev/null && [ -f ".claude/config.yaml" ]; then
+          echo "=== Project Constraints ==="
+          yq -o=json '.constraints' .claude/config.yaml 2>/dev/null || true
+        fi
 ---
 
 # Code Reviewer
@@ -9,22 +17,8 @@ A technology-agnostic skill for systematic code review and quality assessment.
 
 ## Configuration
 
-Review behavior can be customized via `.claude/config.yaml`:
-
-```yaml
-skills:
-  code-reviewer:
-    focus_areas:
-      security: true
-      performance: true
-      maintainability: true
-    severity:
-      block_on: [critical, security]
-      warn_on: [minor]
-    custom_rules: []
-```
-
-**Defaults**: All focus areas enabled, block on critical only.
+Review constraints are loaded from `.claude/config.yaml` → `.constraints` section.
+Project-specific rules should be defined as natural language constraints.
 
 ## Review Methodology
 

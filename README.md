@@ -2,40 +2,172 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Claude Code](https://img.shields.io/badge/Claude-Code-blueviolet)](https://claude.ai/code)
-[![Version](https://img.shields.io/badge/version-2.0.0-blue)](#)
+[![Version](https://img.shields.io/badge/version-2.1.0-blue)](#)
 [![Maintained](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](#)
 [![macOS](https://img.shields.io/badge/macOS-compatible-brightgreen)](#)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#)
 [![Made with Claude](https://img.shields.io/badge/Made%20with-Claude-orange)](https://claude.ai)
 
-A multi-agent orchestration system for Claude Code that enables consistent, reusable AI-assisted development across multiple projects and technology stacks through skill-driven architecture.
+A multi-agent orchestration system for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) that enables consistent, reusable AI-assisted development across multiple projects and technology stacks.
+
+## Why This System?
+
+When using Claude Code for complex projects, you may face these challenges:
+
+| Challenge | Without This System | With This System |
+|-----------|---------------------|------------------|
+| **Inconsistent quality** | AI may skip tests or reviews | Enforced quality gates before completion |
+| **Repeated explanations** | Re-explain project rules every session | Rules loaded automatically from config |
+| **Complex task handling** | Manual breakdown of large tasks | Automatic routing to specialized agents |
+| **Technology switching** | Different prompts for each stack | Skills adapt agents to any technology |
 
 ## Table of Contents
 
-- [Introduction](#introduction)
+- [Quick Start](#quick-start)
 - [Key Features](#key-features)
-- [Architecture Workflow](#architecture-workflow)
-- [Hook Usage Matrix](#hook-usage-matrix)
-- [Skill Usage Matrix](#skill-usage-matrix)
-- [Agent Role Reference](#agent-role-reference)
-- [Skill Reference](#skill-reference)
+- [Installation](#installation)
 - [Getting Started](#getting-started)
 - [Configuration](#configuration)
+- [Architecture Overview](#architecture-overview)
+- [Reference](#reference)
 - [License](#license)
 
-## Introduction
+## Quick Start
 
-This system implements a sophisticated multi-agent architecture where specialized agents collaborate through a central orchestrator. The design follows a **Two-Phase Triage** approach that efficiently classifies incoming requests and routes them to appropriate handlers, ensuring optimal resource utilization and consistent quality across all operations.
+```bash
+# 1. Clone to ~/.claude/
+git clone https://github.com/your-repo/claude-orchestration.git ~/.claude
+
+# 2. Install yq (required for config loading)
+brew install yq
+
+# 3. Copy templates to your project
+cp ~/.claude/templates/CLAUDE.md /path/to/your/project/
+mkdir -p /path/to/your/project/.claude
+cp ~/.claude/templates/.claude/config.yaml /path/to/your/project/.claude/
+
+# 4. Edit the templates for your project, then start Claude Code
+cd /path/to/your/project
+claude
+```
+
+That's it! The system activates automatically when Claude Code starts.
 
 ## Key Features
 
-- **Two-Phase Triage**: Efficient request classification before deep analysis
-- **Skill-Based Adaptation**: Generic agents adapt to any technology through loadable skills
-- **Separation of Concerns**: Clear responsibility boundaries between agents
-- **Quality Gates**: Built-in review and evaluation checkpoints
-- **Multi-Project Support**: Centralized configuration with project-specific overrides
+| Feature | Description |
+|---------|-------------|
+| **Two-Phase Triage** | Simple requests execute immediately; complex ones get full analysis |
+| **Skill-Based Adaptation** | Same agents work with PHP, TypeScript, React, etc. via loadable skills |
+| **Quality Gates** | Automatic code review and acceptance criteria verification |
+| **Project Rules as Config** | Define constraints in YAML, enforced automatically |
+| **Multi-Project Support** | One system, multiple projects with different tech stacks |
 
-## Architecture Workflow
+## Installation
+
+### Prerequisites
+
+- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) - Anthropic's CLI tool
+- **yq** - YAML processor (used by skills to read config)
+  ```bash
+  brew install yq   # macOS
+  # or: pip install yq
+  ```
+
+### Setup
+
+```bash
+# Clone this repository to ~/.claude/
+git clone https://github.com/your-repo/claude-orchestration.git ~/.claude
+
+# Verify installation
+ls ~/.claude/agents/    # Should show agent definitions
+ls ~/.claude/skills/    # Should show skill definitions
+```
+
+## Getting Started
+
+### 1. Copy templates to your project
+
+```bash
+cp ~/.claude/templates/CLAUDE.md /path/to/project/CLAUDE.md
+mkdir -p /path/to/project/.claude
+cp ~/.claude/templates/.claude/config.yaml /path/to/project/.claude/config.yaml
+```
+
+### 2. Configure your project
+
+**CLAUDE.md** - Human-readable project context:
+- Business rules with reasons and code examples
+- Prohibited patterns with explanations
+- Architecture decisions
+
+**`.claude/config.yaml`** - Machine-readable settings:
+- Agent skill assignments (defines your tech stack)
+- Test commands
+- Constraints as natural language rules
+
+### 3. Start Claude Code
+
+```bash
+cd /path/to/project
+claude
+```
+
+The main-orchestrator automatically:
+1. Classifies your request (trivial or complex)
+2. Routes to appropriate agents
+3. Enforces quality gates before completion
+
+## Configuration
+
+Configuration lives in `.claude/config.yaml`. Here's what each section does:
+
+| Section | Purpose | Example |
+|---------|---------|---------|
+| `agents.*` | Which skills each agent loads | `code-developer: [php/coding-standards]` |
+| `constraints.*` | Rules enforced during development | Natural language prohibitions |
+| `testing.*` | Test execution settings | Docker command, documentation path |
+| `git.*` | Git operation policy | auto/user_request_only/prohibited |
+
+### Example Configuration
+
+```yaml
+# Define your tech stack via agent skills
+agents:
+  code-developer:
+    skills:
+      - php/coding-standards
+      - php-cakephp/code-implementer
+
+# Project constraints (natural language rules)
+constraints:
+  architecture:
+    layers:
+      - "Controller must not contain business logic."
+    dependencies:
+      - "No circular dependencies between Models."
+  testing:
+    prohibited:
+      - "Do not mock production code."
+
+# Git settings
+git:
+  operations:
+    commit: user_request_only
+    push: user_request_only
+```
+
+### Where to Put Information
+
+| Information | Location | Read By |
+|-------------|----------|---------|
+| Business rules with code examples | `CLAUDE.md` | Human context |
+| Constraints as rules | `.claude/config.yaml` | Skills via hooks |
+| Test commands | `.claude/config.yaml` | test-implementer skill |
+| Agent skill assignments | `.claude/config.yaml` | Each agent |
+
+## Architecture Overview
 
 ```mermaid
 flowchart TD
@@ -86,252 +218,160 @@ flowchart TD
     style Report fill:#f3e5f5,stroke:#7b1fa2
 ```
 
-### Direct Execution Limits (Trivial Tasks)
+### How It Works
 
-| Limit | Value |
-|-------|-------|
-| max_file_reads | 3 |
-| max_search_iterations | 2 |
-| allowed_operations | read, search, list |
+1. **Entry**: Your request goes to `quick-classifier`
+2. **Triage**: Simple tasks execute directly; complex ones go through full analysis
+3. **Implementation**: `code-developer` writes code, `test-executor` runs tests
+4. **Quality**: `quality-reviewer` checks code, `deliverable-evaluator` verifies acceptance criteria
+5. **Report**: Results returned to you
 
-## Hook Usage Matrix
+### Key Agents
 
-### Agent Hooks (Chain Control Only)
+| Agent | What It Does |
+|-------|--------------|
+| quick-classifier | Decides if request is simple or complex |
+| goal-clarifier | Defines what "done" looks like (acceptance criteria) |
+| code-developer | Writes code following loaded skills |
+| test-executor | Runs tests and reports results |
+| quality-reviewer | Reviews code for quality and security |
+| deliverable-evaluator | Final check against acceptance criteria |
 
-| Agent | SessionStart | PreToolUse | SubagentStop | Stop |
-|-------|:------------:|:----------:|:------------:|:----:|
-| quick-classifier | - | - | - | - |
-| goal-clarifier | - | - | 💬 | - |
-| main-orchestrator | - | - | - | 💬 |
-| task-scale-evaluator | - | - | 💬 | - |
-| design-architect | - | - | 💬 | - |
-| code-developer | - | 💬 | 💬 | - |
-| test-strategist | - | - | 💬 | - |
-| test-executor | - | - | 💬 | - |
-| test-failure-debugger | - | - | 💬 | - |
-| quality-reviewer | - | - | 💬 | - |
-| deliverable-evaluator | 💬 | 💬 | 💬 | - |
-| workflow-orchestrator | - | - | 💬 | - |
+## Reference
 
-### Skill Hooks (Config Loading & Validation)
-
-| Skill | SessionStart | PostToolUse |
-|-------|:------------:|:-----------:|
-| generic/test-implementer | ⌘ (testing rules) | - |
-| generic/task-scaler | ⌘ (scale config) | - |
-| typescript/coding-standards | ⌘ (coding standards) | ⌘ (eslint) |
-| php/coding-standards | ⌘ (coding standards) | ⌘ (php -l) |
-
-**Legend:** ⌘ = shell script hook (uses yq for config), 💬 = prompt injection hook
-
-### Architecture Principle
-
-- **Skills**: Load project-specific rules via `yq` from `.claude/config.yaml`
-- **Agents**: Chain control only (SubagentStop, Stop) - no rule-based hooks
-
-> **Exception**: deliverable-evaluator has a SessionStart prompt hook for loading evaluation context from the prompt (not config loading).
-
-
-## Skill Usage Matrix
-
-### Generic Skills
-
-| Agent | req-analyzer | accept-criteria | workflow-pat | task-scaler | deleg-router | design-pat | test-impl | code-rev | compl-eval | eval-criteria | deliv-valid | git-op |
-|-------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| quick-classifier | - | - | - | - | - | - | - | - | - | - | - | - |
-| goal-clarifier | ✅️ | ✅️ | - | - | - | - | - | - | - | - | - | - |
-| main-orchestrator | - | - | ✅️ | ✅️ | ✅️ | - | - | - | - | - | - | - |
-| task-scale-evaluator | ✅️ | - | - | ✅️ | - | - | - | - | - | - | - | - |
-| design-architect | - | - | - | - | - | ✅️ | - | - | - | - | - | - |
-| code-developer | - | - | - | - | - | - | - | - | - | - | - | - |
-| test-strategist | - | - | - | - | - | - | - | - | - | - | - | - |
-| test-executor | - | - | - | - | - | - | ✅️ | - | - | - | - | - |
-| test-failure-debugger | - | - | - | - | - | - | - | - | - | - | - | - |
-| quality-reviewer | - | - | - | - | - | - | - | ✅️ | - | - | - | - |
-| deliverable-evaluator | - | - | - | - | - | - | - | - | ✅️ | ✅️ | ✅️ | - |
-| workflow-orchestrator | - | - | - | - | - | - | - | - | - | - | - | ✅️ |
-
-**Legend:** req-analyzer = requirement-analyzer, accept-criteria = acceptance-criteria, workflow-pat = workflow-patterns, deleg-router = delegation-router, design-pat = design-patterns, test-impl = test-implementer, code-rev = code-reviewer, compl-eval = completion-evaluator, eval-criteria = evaluation-criteria, deliv-valid = deliverable-validator, git-op = git-operator
-
-### Language/Framework Skills (configured per project)
-
-| Agent | Loads From Config |
-|-------|-------------------|
-| code-developer | `language/*`, `framework/*` (e.g., php/coding-standards, typescript-react/code-implementer) |
-| test-strategist | `language/testing-standards`, `framework/test-*` |
-| quality-reviewer | `language/*-standards`, `framework/code-reviewer` |
-| design-architect | `framework/*-designer` |
-
-## Agent Role Reference
+<details>
+<summary><strong>Agent Reference (12 agents)</strong></summary>
 
 | Agent | Responsibility | Action |
 |-------|----------------|--------|
 | quick-classifier | Request classification | Direct execution eligibility |
-| goal-clarifier | Requirement analysis | Acceptance criteria definition, clarifying questions |
+| goal-clarifier | Requirement analysis | Acceptance criteria definition |
 | main-orchestrator | Task routing | Delegate to appropriate agents |
 | task-scale-evaluator | Complexity assessment | Simple/complex determination |
 | design-architect | Architecture design | Technical design and patterns |
 | code-developer | Code implementation | Write code following skills |
 | test-strategist | Test planning | Test strategy and case design |
 | test-executor | Test execution | Run tests and determine pass/fail |
-| test-failure-debugger | Failure analysis | Root cause investigation and fix suggestions |
+| test-failure-debugger | Failure analysis | Root cause investigation |
 | quality-reviewer | Quality review | Code quality and security check |
-| deliverable-evaluator | Acceptance verification | Match against acceptance criteria |
+| deliverable-evaluator | Acceptance verification | Match against criteria |
 | workflow-orchestrator | Workflow coordination | Multi-agent collaboration |
 
-## Skill Reference
+</details>
+
+<details>
+<summary><strong>Skill Reference (37 skills)</strong></summary>
 
 ### Generic Skills (12)
 
 | Skill | Description |
 |-------|-------------|
-| acceptance-criteria | Defines acceptance criteria patterns and validation rules |
-| code-reviewer | Universal code review patterns and checklists |
-| completion-evaluator | Task completion verification criteria |
-| delegation-router | Agent delegation decision patterns |
-| deliverable-validator | Deliverable validation rules and quality checks |
-| design-patterns | SOLID, DRY, KISS, and architectural patterns |
-| evaluation-criteria | Final evaluation standards and metrics |
-| git-operator | Git operation patterns and commit message standards |
-| requirement-analyzer | Requirement analysis and documentation patterns |
-| task-scaler | Task complexity evaluation criteria |
-| test-implementer | Test implementation patterns and best practices |
-| workflow-patterns | Multi-step workflow coordination patterns |
+| acceptance-criteria | Acceptance criteria patterns |
+| code-reviewer | Universal code review patterns |
+| completion-evaluator | Task completion verification |
+| delegation-router | Agent delegation patterns |
+| deliverable-validator | Deliverable validation rules |
+| design-patterns | SOLID, DRY, KISS patterns |
+| evaluation-criteria | Final evaluation standards |
+| git-operator | Git operation patterns |
+| requirement-analyzer | Requirement analysis patterns |
+| task-scaler | Task complexity evaluation |
+| test-implementer | Test implementation patterns |
+| workflow-patterns | Workflow coordination patterns |
 
 ### PHP Skills (3)
 
 | Skill | Description |
 |-------|-------------|
-| coding-standards | PSR-12 coding standards and PHP best practices |
-| security-patterns | OWASP patterns, input validation, SQL injection prevention |
-| testing-standards | PHPUnit best practices and testing patterns |
+| coding-standards | PSR-12 and PHP best practices |
+| security-patterns | OWASP, input validation |
+| testing-standards | PHPUnit best practices |
 
 ### PHP-CakePHP Skills (12)
 
 | Skill | Description |
 |-------|-------------|
-| code-implementer | CakePHP MVC implementation patterns |
-| code-reviewer | CakePHP-specific code review checklist |
-| database-designer | Database schema design for CakePHP |
-| fixture-generator | Test fixture generation patterns |
-| functional-designer | Functional specification design |
-| migration-checker | Migration validation and verification |
-| multi-tenant-db-handler | Multi-tenant database patterns |
-| refactoring-advisor | CakePHP refactoring recommendations |
-| requirement-analyzer | CakePHP-specific requirement analysis |
-| test-case-designer | Test case design for CakePHP |
-| test-validator | Test quality and specification validation |
+| code-implementer | CakePHP MVC patterns |
+| code-reviewer | CakePHP code review |
+| database-designer | Database schema design |
+| fixture-generator | Test fixture generation |
+| functional-designer | Functional specification |
+| migration-checker | Migration validation |
+| multi-tenant-db-handler | Multi-tenant patterns |
+| refactoring-advisor | Refactoring recommendations |
+| requirement-analyzer | CakePHP requirements |
+| test-case-designer | Test case design |
+| test-validator | Test quality validation |
 
 ### TypeScript Skills (10)
 
 | Skill | Description |
 |-------|-------------|
-| typescript/coding-standards | TypeScript coding standards and best practices |
-| typescript-react/architectural-patterns | React architectural patterns and component design |
-| typescript-react/code-implementer | React component implementation patterns |
-| typescript-react/code-reviewer | React-specific code review checklist |
-| typescript-react/testing-standards | React testing patterns with Jest/RTL |
-| typescript-nextjs/code-implementer | Next.js implementation patterns |
-| typescript-nextjs/code-reviewer | Next.js-specific code review checklist |
-| typescript-nextjs/deliverable-criteria | Next.js deliverable validation criteria |
-| typescript-react-query/patterns | React Query/TanStack Query patterns |
-| typescript-zustand/patterns | Zustand state management patterns |
+| typescript/coding-standards | TypeScript best practices |
+| typescript-react/* | React patterns (5 skills) |
+| typescript-nextjs/* | Next.js patterns (3 skills) |
+| typescript-react-query/patterns | TanStack Query patterns |
+| typescript-zustand/patterns | Zustand state patterns |
 
-## Installation Requirements
+</details>
 
-### Prerequisites
+<details>
+<summary><strong>Hook Usage Matrix (Advanced)</strong></summary>
 
-- **yq** - YAML processor for reading project configuration
-  ```bash
-  # macOS (recommended)
-  brew install yq
+### Agent Hooks
 
-  # Alternative: pip
-  pip install yq
-  ```
+| Agent | SessionStart | PreToolUse | SubagentStop | Stop |
+|-------|:------------:|:----------:|:------------:|:----:|
+| quick-classifier | - | - | - | - |
+| goal-clarifier | - | - | ✅️ | - |
+| main-orchestrator | - | - | - | ✅️ |
+| task-scale-evaluator | - | - | ✅️ | - |
+| design-architect | - | - | ✅️ | - |
+| code-developer | - | ✅️ | ✅️ | - |
+| test-strategist | - | - | ✅️ | - |
+| test-executor | - | - | ✅️ | - |
+| test-failure-debugger | - | - | ✅️ | - |
+| quality-reviewer | - | - | ✅️ | - |
+| deliverable-evaluator | ✅️ | ✅️ | ✅️ | - |
+| workflow-orchestrator | - | - | ✅️ | - |
 
-  yq is used by skill hooks to read project-specific rules from `.claude/config.yaml`.
+### Skill Hooks (Config Loading)
 
-## Getting Started
+| Skill | SessionStart | PostToolUse | config.yaml Key |
+|-------|:------------:|:-----------:|-----------------|
+| generic/git-operator | ✅️ | - | `.output.language`, `.git` |
+| generic/test-implementer | ✅️ | - | `.testing`, `.constraints.testing` |
+| generic/task-scaler | ✅️ | - | `.task_scaling.thresholds` |
+| generic/code-reviewer | ✅️ | - | `.constraints` |
+| php/coding-standards | ✅️ | ✅️ | `.coding_standards` |
+| typescript/coding-standards | ✅️ | ✅️ | `.coding_standards` |
+| php-cakephp/test-validator | ✅️ | - | `.constraints.testing`, `.constraints.schema` |
+| php-cakephp/code-implementer | ✅️ | - | `.constraints.architecture` |
+| php-cakephp/code-reviewer | ✅️ | - | `.constraints.architecture`, `.constraints` |
 
-### 1. Copy templates to your project
+**Architecture Principle:**
+- **Skills**: Load project-specific rules via `yq` from `.claude/config.yaml`
+- **Agents**: Chain control only (SubagentStop, Stop) - no rule-based hooks
 
-```bash
-# Copy CLAUDE.md template
-cp ~/.claude/templates/CLAUDE.md /path/to/project/CLAUDE.md
+</details>
 
-# Copy config.yaml template
-mkdir -p /path/to/project/.claude
-cp ~/.claude/templates/.claude/config.yaml /path/to/project/.claude/config.yaml
-```
+<details>
+<summary><strong>Skill Usage Matrix (Advanced)</strong></summary>
 
-### 2. Configure your project
+| Agent | Uses Skills |
+|-------|-------------|
+| goal-clarifier | requirement-analyzer, acceptance-criteria |
+| main-orchestrator | workflow-patterns, task-scaler, delegation-router |
+| task-scale-evaluator | requirement-analyzer, task-scaler |
+| design-architect | design-patterns |
+| test-executor | test-implementer |
+| quality-reviewer | code-reviewer |
+| deliverable-evaluator | completion-evaluator, evaluation-criteria, deliverable-validator |
+| workflow-orchestrator | git-operator |
 
-Edit `CLAUDE.md` with project-specific rules:
-- Business rules and constraints
-- Prohibited patterns with explanations
-- Quality gates and requirements
+Language/Framework skills (e.g., `php-cakephp/*`) are loaded per-project via `agents.*.skills` in config.yaml.
 
-Edit `.claude/config.yaml` with technical settings:
-- Technology stack specification
-- Agent skill assignments
-- Test command configuration
-
-### 3. Start using Claude Code
-
-The main-orchestrator will automatically classify requests and route them appropriately.
-
-## Configuration
-
-Configuration is managed through `.claude/config.yaml` in each project.
-
-**Required sections:**
-1. `agent_skills` - Which skills are used by which agents
-2. `skills.*` - Skill-specific customization rules
-3. `testing.*` - Test execution configuration
-
-```yaml
-# Agent-Skill Assignments (defines tech stack implicitly)
-agent_skills:
-  code-developer:
-    - php/coding-standards
-    - php-cakephp/code-implementer
-  quality-reviewer:
-    - generic/code-reviewer
-    - php-cakephp/test-validator
-
-# Skill-Specific Configuration
-skills:
-  test-validator:
-    enabled: true
-    rules:
-      require_guarantee_section: true
-
-# Testing Configuration
-testing:
-  command: "docker compose run --rm web vendor/bin/phpunit"
-  rules:
-    documentation: "tests/README.md"
-```
-
-### Where to Put Project Information
-
-| Information | Location |
-|-------------|----------|
-| Agent-skill assignments | `.claude/config.yaml` |
-| Skill customization rules | `.claude/config.yaml` |
-| Test command | `.claude/config.yaml` |
-| Business rules, prohibited patterns | `CLAUDE.md` |
-| Project-specific test rules | `tests/README.md` |
-| Technology stack, architecture | `CLAUDE.md` |
-
-### Skill Loading Order
-
-Skills are loaded in priority order (later overrides earlier):
-
-1. `generic/*` - Base universal patterns
-2. `{language}/*` - Language-specific patterns
-3. `{language}-{framework}/*` - Framework-specific patterns
+</details>
 
 ## License
 
@@ -339,5 +379,5 @@ MIT License - See [LICENSE](LICENSE) file for details.
 
 ---
 
-**Version**: 2.0.0
-**Last Updated**: 2025-01-11
+**Version**: 2.1.0
+**Last Updated**: 2025-01-12

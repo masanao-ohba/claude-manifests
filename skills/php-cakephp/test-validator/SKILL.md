@@ -1,6 +1,16 @@
 ---
 name: test-validator
 description: Validates PHP test files for CakePHP projects, ensuring compliance with testing standards including proper documentation format, Configure::read usage, and avoiding prohibited patterns
+hooks:
+  SessionStart:
+    - type: command
+      command: |
+        if command -v yq &> /dev/null && [ -f ".claude/config.yaml" ]; then
+          echo "=== Testing Constraints ==="
+          yq -o=json '.constraints.testing' .claude/config.yaml 2>/dev/null || true
+          yq -o=json '.constraints.schema' .claude/config.yaml 2>/dev/null || true
+          yq -o=json '.constraints.business_rules' .claude/config.yaml 2>/dev/null || true
+        fi
 ---
 
 # PHP Test Validator

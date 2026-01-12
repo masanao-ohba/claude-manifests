@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Claude Code](https://img.shields.io/badge/Claude-Code-blueviolet)](https://claude.ai/code)
-[![Version](https://img.shields.io/badge/version-2.0.0-blue)](#)
+[![Version](https://img.shields.io/badge/version-2.1.0-blue)](#)
 [![Maintained](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](#)
 [![macOS](https://img.shields.io/badge/macOS-compatible-brightgreen)](#)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#)
@@ -10,32 +10,164 @@
 
 Claude Code向けのマルチエージェントオーケストレーションシステムです。スキル駆動型アーキテクチャにより、複数のプロジェクトや技術スタックにわたって一貫性のある再利用可能なAI支援開発を実現します。
 
+## このシステムを使う理由
+
+Claude Codeで複雑なプロジェクトを扱う際、以下のような課題に直面することがあります：
+
+| 課題 | このシステムなし | このシステムあり |
+|------|-----------------|-----------------|
+| **品質のばらつき** | AIがテストやレビューをスキップすることがある | 完了前に品質ゲートを強制 |
+| **繰り返しの説明** | 毎セッションでプロジェクトルールを再説明 | 設定からルールを自動読み込み |
+| **複雑なタスク処理** | 大きなタスクを手動で分解 | 専門エージェントへ自動ルーティング |
+| **技術スタックの切替** | スタックごとに異なるプロンプト | スキルがエージェントをあらゆる技術に適応 |
+
 ## 目次
 
-- [はじめに](#はじめに)
+- [クイックスタート](#クイックスタート)
 - [主な特徴](#主な特徴)
-- [アーキテクチャワークフロー](#アーキテクチャワークフロー)
-- [フック使用マトリクス](#フック使用マトリクス)
-- [スキル使用マトリクス](#スキル使用マトリクス)
-- [エージェント一覧](#エージェント一覧)
-- [スキル一覧](#スキル一覧)
+- [インストール](#インストール)
 - [使い方](#使い方)
 - [設定](#設定)
+- [アーキテクチャ概要](#アーキテクチャ概要)
+- [リファレンス](#リファレンス)
 - [ライセンス](#ライセンス)
 
-## はじめに
+## クイックスタート
 
-本システムは、専門化されたエージェントが中央オーケストレーターを通じて協調する洗練されたマルチエージェントアーキテクチャを実装しています。**2フェーズトリアージ**アプローチを採用し、受信したリクエストを効率的に分類して適切なハンドラーにルーティングすることで、最適なリソース利用と全操作にわたる一貫した品質を確保します。
+```bash
+# 1. ~/.claude/ にクローン
+git clone https://github.com/your-repo/claude-orchestration.git ~/.claude
+
+# 2. yq をインストール（設定読み込みに必要）
+brew install yq
+
+# 3. テンプレートをプロジェクトにコピー
+cp ~/.claude/templates/CLAUDE.md /path/to/your/project/
+mkdir -p /path/to/your/project/.claude
+cp ~/.claude/templates/.claude/config.yaml /path/to/your/project/.claude/
+
+# 4. テンプレートをプロジェクト用に編集し、Claude Codeを起動
+cd /path/to/your/project
+claude
+```
+
+これだけです！Claude Code起動時にシステムが自動的にアクティブになります。
 
 ## 主な特徴
 
-- **2フェーズトリアージ**: 深い分析の前に効率的なリクエスト分類を実行
-- **スキルベースの適応**: 汎用エージェントがロード可能なスキルを通じてあらゆる技術に適応
-- **関心の分離**: エージェント間の明確な責任境界
-- **品質ゲート**: 組み込みのレビューと評価チェックポイント
-- **マルチプロジェクト対応**: プロジェクト固有のオーバーライドが可能な集中設定
+| 機能 | 説明 |
+|------|------|
+| **2フェーズトリアージ** | 単純なリクエストは即座に実行、複雑なものは完全な分析を実施 |
+| **スキルベースの適応** | 同じエージェントがPHP、TypeScript、Reactなど様々な技術にスキル経由で対応 |
+| **品質ゲート** | 自動コードレビューと受入基準の検証 |
+| **設定としてのプロジェクトルール** | YAMLで制約を定義し、自動的に強制 |
+| **マルチプロジェクト対応** | 1つのシステムで、異なる技術スタックの複数プロジェクトに対応 |
 
-## アーキテクチャワークフロー
+## インストール
+
+### 前提条件
+
+- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) - AnthropicのCLIツール
+- **yq** - YAMLプロセッサ（スキルが設定を読み込むために使用）
+  ```bash
+  brew install yq   # macOS
+  # または: pip install yq
+  ```
+
+### セットアップ
+
+```bash
+# このリポジトリを ~/.claude/ にクローン
+git clone https://github.com/your-repo/claude-orchestration.git ~/.claude
+
+# インストールを確認
+ls ~/.claude/agents/    # エージェント定義が表示されるはず
+ls ~/.claude/skills/    # スキル定義が表示されるはず
+```
+
+## 使い方
+
+### 1. テンプレートをプロジェクトにコピー
+
+```bash
+cp ~/.claude/templates/CLAUDE.md /path/to/project/CLAUDE.md
+mkdir -p /path/to/project/.claude
+cp ~/.claude/templates/.claude/config.yaml /path/to/project/.claude/config.yaml
+```
+
+### 2. プロジェクトを設定
+
+**CLAUDE.md** - 人間が読むプロジェクトコンテキスト：
+- 理由とコード例を含むビジネスルール
+- 説明付きの禁止パターン
+- アーキテクチャの決定事項
+
+**`.claude/config.yaml`** - 機械が読む設定：
+- エージェントのスキル割り当て（技術スタックを定義）
+- テストコマンド
+- 自然言語による制約ルール
+
+### 3. Claude Codeを起動
+
+```bash
+cd /path/to/project
+claude
+```
+
+main-orchestratorが自動的に：
+1. リクエストを分類（単純か複雑か）
+2. 適切なエージェントにルーティング
+3. 完了前に品質ゲートを強制
+
+## 設定
+
+設定は`.claude/config.yaml`に配置します。各セクションの役割：
+
+| セクション | 用途 | 例 |
+|-----------|------|-----|
+| `agents.*` | 各エージェントがロードするスキル | `code-developer: [php/coding-standards]` |
+| `constraints.*` | 開発中に強制されるルール | 自然言語による禁止事項 |
+| `testing.*` | テスト実行設定 | Dockerコマンド、ドキュメントパス |
+| `git.*` | Git操作ポリシー | auto/user_request_only/prohibited |
+
+### 設定例
+
+```yaml
+# エージェントのスキルで技術スタックを定義
+agents:
+  code-developer:
+    skills:
+      - php/coding-standards
+      - php-cakephp/code-implementer
+
+# プロジェクト制約（自然言語ルール）
+constraints:
+  architecture:
+    layers:
+      - "Controllerにビジネスロジックを含めてはならない"
+    dependencies:
+      - "Model間の循環依存は禁止"
+  testing:
+    prohibited:
+      - "本番コードをモックしてはならない"
+
+# Git設定
+git:
+  operations:
+    commit: user_request_only
+    push: user_request_only
+```
+
+### 情報の配置場所
+
+| 情報 | 配置場所 | 読み込み元 |
+|------|----------|-----------|
+| コード例付きのビジネスルール | `CLAUDE.md` | 人間向けコンテキスト |
+| ルールとしての制約 | `.claude/config.yaml` | スキルがフック経由で読込 |
+| テストコマンド | `.claude/config.yaml` | test-implementerスキル |
+| エージェントのスキル割当 | `.claude/config.yaml` | 各エージェント |
+
+## アーキテクチャ概要
 
 ```mermaid
 flowchart TD
@@ -86,88 +218,34 @@ flowchart TD
     style Report fill:#f3e5f5,stroke:#7b1fa2
 ```
 
-### 直接実行の制限（トリビアルタスク）
+### 動作の仕組み
 
-| 制限項目 | 値 |
-|---------|-----|
-| max_file_reads | 3 |
-| max_search_iterations | 2 |
-| allowed_operations | read, search, list |
+1. **エントリー**: リクエストが`quick-classifier`に送られる
+2. **トリアージ**: 単純なタスクは直接実行、複雑なものは完全な分析を実施
+3. **実装**: `code-developer`がコードを書き、`test-executor`がテストを実行
+4. **品質**: `quality-reviewer`がコードをチェック、`deliverable-evaluator`が受入基準を検証
+5. **報告**: 結果があなたに返される
 
-## フック使用マトリクス
+### 主要エージェント
 
-### エージェントフック（チェイン制御のみ）
+| エージェント | 役割 |
+|-------------|------|
+| quick-classifier | リクエストが単純か複雑かを判定 |
+| goal-clarifier | 「完了」の定義（受入基準）を策定 |
+| code-developer | ロードされたスキルに従ってコードを記述 |
+| test-executor | テストを実行し結果を報告 |
+| quality-reviewer | コード品質とセキュリティをレビュー |
+| deliverable-evaluator | 受入基準との最終チェック |
 
-| Agent | SessionStart | PreToolUse | SubagentStop | Stop |
-|-------|:------------:|:----------:|:------------:|:----:|
-| quick-classifier | - | - | - | - |
-| goal-clarifier | - | - | 💬 | - |
-| main-orchestrator | - | - | - | 💬 |
-| task-scale-evaluator | - | - | 💬 | - |
-| design-architect | - | - | 💬 | - |
-| code-developer | - | 💬 | 💬 | - |
-| test-strategist | - | - | 💬 | - |
-| test-executor | - | - | 💬 | - |
-| test-failure-debugger | - | - | 💬 | - |
-| quality-reviewer | - | - | 💬 | - |
-| deliverable-evaluator | 💬 | 💬 | 💬 | - |
-| workflow-orchestrator | - | - | 💬 | - |
+## リファレンス
 
-### スキルフック（設定読み込み＆バリデーション）
-
-| Skill | SessionStart | PostToolUse |
-|-------|:------------:|:-----------:|
-| generic/test-implementer | ⌘ (testing rules) | - |
-| generic/task-scaler | ⌘ (scale config) | - |
-| typescript/coding-standards | ⌘ (coding standards) | ⌘ (eslint) |
-| php/coding-standards | ⌘ (coding standards) | ⌘ (php -l) |
-
-**凡例:** ⌘ = シェルスクリプトフック (yqで設定読み込み), 💬 = プロンプト注入フック
-
-### アーキテクチャ原則
-
-- **スキル**: `.claude/config.yaml`から`yq`経由でプロジェクト固有ルールを読み込み
-- **エージェント**: チェイン制御のみ（SubagentStop、Stop）- ルールベースフックなし
-
-> **例外**: deliverable-evaluatorはプロンプトから評価コンテキストを読み込むためのSessionStartプロンプトフックを持つ（設定読み込みではない）
-
-
-## スキル使用マトリクス
-
-### 汎用スキル
-
-| Agent | req-analyzer | accept-criteria | workflow-pat | task-scaler | deleg-router | design-pat | test-impl | code-rev | compl-eval | eval-criteria | deliv-valid | git-op |
-|-------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| quick-classifier | - | - | - | - | - | - | - | - | - | - | - | - |
-| goal-clarifier | ✅️ | ✅️ | - | - | - | - | - | - | - | - | - | - |
-| main-orchestrator | - | - | ✅️ | ✅️ | ✅️ | - | - | - | - | - | - | - |
-| task-scale-evaluator | ✅️ | - | - | ✅️ | - | - | - | - | - | - | - | - |
-| design-architect | - | - | - | - | - | ✅️ | - | - | - | - | - | - |
-| code-developer | - | - | - | - | - | - | - | - | - | - | - | - |
-| test-strategist | - | - | - | - | - | - | - | - | - | - | - | - |
-| test-executor | - | - | - | - | - | - | ✅️ | - | - | - | - | - |
-| test-failure-debugger | - | - | - | - | - | - | - | - | - | - | - | - |
-| quality-reviewer | - | - | - | - | - | - | - | ✅️ | - | - | - | - |
-| deliverable-evaluator | - | - | - | - | - | - | - | - | ✅️ | ✅️ | ✅️ | - |
-| workflow-orchestrator | - | - | - | - | - | - | - | - | - | - | - | ✅️ |
-
-**凡例:** req-analyzer = requirement-analyzer, accept-criteria = acceptance-criteria, workflow-pat = workflow-patterns, deleg-router = delegation-router, design-pat = design-patterns, test-impl = test-implementer, code-rev = code-reviewer, compl-eval = completion-evaluator, eval-criteria = evaluation-criteria, deliv-valid = deliverable-validator, git-op = git-operator
-
-### 言語/フレームワーク固有スキル（プロジェクトごとに設定）
-
-| Agent | 設定からロード |
-|-------|----------------|
-| code-developer | `language/*`, `framework/*` (例: php/coding-standards, typescript-react/code-implementer) |
-| test-strategist | `language/testing-standards`, `framework/test-*` |
-| quality-reviewer | `language/*-standards`, `framework/code-reviewer` |
-| design-architect | `framework/*-designer` |
-
-## エージェント一覧
+<details>
+<summary><strong>エージェント一覧（12エージェント）</strong></summary>
 
 | Agent | 責務 | アクション |
 |-------|------|----------|
 | quick-classifier | リクエスト分類 | 直接実行可否の判定 |
-| goal-clarifier | 要件分析 | 達成条件の定義、不明点の質問 |
+| goal-clarifier | 要件分析 | 達成条件の定義 |
 | main-orchestrator | タスクルーティング | 適切なエージェントへの委譲 |
 | task-scale-evaluator | 複雑性評価 | 単純/複雑の判定 |
 | design-architect | アーキテクチャ設計 | 技術設計とパターン選定 |
@@ -179,163 +257,121 @@ flowchart TD
 | deliverable-evaluator | 受入検証 | 達成条件との照合 |
 | workflow-orchestrator | ワークフロー調整 | 複数エージェントの協調管理 |
 
-## スキル一覧
+</details>
+
+<details>
+<summary><strong>スキル一覧（37スキル）</strong></summary>
 
 ### 汎用スキル (12)
 
 | Skill | 説明 |
 |-------|------|
-| acceptance-criteria | 受入基準パターンと検証ルールを定義 |
-| code-reviewer | 汎用コードレビューパターンとチェックリスト |
-| completion-evaluator | タスク完了検証基準 |
-| delegation-router | エージェント委譲決定パターン |
-| deliverable-validator | 成果物検証ルールと品質チェック |
-| design-patterns | SOLID、DRY、KISS、およびアーキテクチャパターン |
-| evaluation-criteria | 最終評価基準とメトリクス |
-| git-operator | Git操作パターンとコミットメッセージ標準 |
-| requirement-analyzer | 要件分析とドキュメントパターン |
-| task-scaler | タスク複雑性評価基準 |
-| test-implementer | テスト実装パターンとベストプラクティス |
-| workflow-patterns | マルチステップワークフロー調整パターン |
+| acceptance-criteria | 受入基準パターン |
+| code-reviewer | 汎用コードレビューパターン |
+| completion-evaluator | タスク完了検証 |
+| delegation-router | エージェント委譲パターン |
+| deliverable-validator | 成果物検証ルール |
+| design-patterns | SOLID、DRY、KISSパターン |
+| evaluation-criteria | 最終評価基準 |
+| git-operator | Git操作パターン |
+| requirement-analyzer | 要件分析パターン |
+| task-scaler | タスク複雑性評価 |
+| test-implementer | テスト実装パターン |
+| workflow-patterns | ワークフロー調整パターン |
 
 ### PHP スキル (3)
 
 | Skill | 説明 |
 |-------|------|
-| coding-standards | PSR-12コーディング標準とPHPベストプラクティス |
-| security-patterns | OWASPパターン、入力検証、SQLインジェクション防止 |
-| testing-standards | PHPUnitベストプラクティスとテストパターン |
+| coding-standards | PSR-12とPHPベストプラクティス |
+| security-patterns | OWASP、入力検証 |
+| testing-standards | PHPUnitベストプラクティス |
 
 ### PHP-CakePHP スキル (12)
 
 | Skill | 説明 |
 |-------|------|
-| code-implementer | CakePHP MVC実装パターン |
-| code-reviewer | CakePHP固有のコードレビューチェックリスト |
-| database-designer | CakePHP向けデータベーススキーマ設計 |
-| fixture-generator | テストフィクスチャ生成パターン |
+| code-implementer | CakePHP MVCパターン |
+| code-reviewer | CakePHPコードレビュー |
+| database-designer | データベーススキーマ設計 |
+| fixture-generator | テストフィクスチャ生成 |
 | functional-designer | 機能仕様設計 |
-| migration-checker | マイグレーション検証と確認 |
-| multi-tenant-db-handler | マルチテナントデータベースパターン |
-| refactoring-advisor | CakePHPリファクタリング推奨事項 |
-| requirement-analyzer | CakePHP固有の要件分析 |
-| test-case-designer | CakePHP向けテストケース設計 |
-| test-validator | テスト品質・仕様検証 |
+| migration-checker | マイグレーション検証 |
+| multi-tenant-db-handler | マルチテナントパターン |
+| refactoring-advisor | リファクタリング推奨 |
+| requirement-analyzer | CakePHP要件分析 |
+| test-case-designer | テストケース設計 |
+| test-validator | テスト品質検証 |
 
 ### TypeScript スキル (10)
 
 | Skill | 説明 |
 |-------|------|
-| typescript/coding-standards | TypeScriptコーディング標準とベストプラクティス |
-| typescript-react/architectural-patterns | Reactアーキテクチャパターンとコンポーネント設計 |
-| typescript-react/code-implementer | Reactコンポーネント実装パターン |
-| typescript-react/code-reviewer | React固有のコードレビューチェックリスト |
-| typescript-react/testing-standards | Jest/RTLを使用したReactテストパターン |
-| typescript-nextjs/code-implementer | Next.js実装パターン |
-| typescript-nextjs/code-reviewer | Next.js固有のコードレビューチェックリスト |
-| typescript-nextjs/deliverable-criteria | Next.js成果物検証基準 |
-| typescript-react-query/patterns | React Query/TanStack Queryパターン |
+| typescript/coding-standards | TypeScriptベストプラクティス |
+| typescript-react/* | Reactパターン（5スキル） |
+| typescript-nextjs/* | Next.jsパターン（3スキル） |
+| typescript-react-query/patterns | TanStack Queryパターン |
 | typescript-zustand/patterns | Zustand状態管理パターン |
 
-## 使い方
+</details>
 
-### 1. テンプレートをプロジェクトにコピー
+<details>
+<summary><strong>フック使用マトリクス（上級者向け）</strong></summary>
 
-```bash
-# CLAUDE.mdテンプレートをコピー
-cp ~/.claude/templates/CLAUDE.md /path/to/project/CLAUDE.md
+### エージェントフック
 
-# config.yamlテンプレートをコピー
-mkdir -p /path/to/project/.claude
-cp ~/.claude/templates/.claude/config.yaml /path/to/project/.claude/config.yaml
-```
+| Agent | SessionStart | PreToolUse | SubagentStop | Stop |
+|-------|:------------:|:----------:|:------------:|:----:|
+| quick-classifier | - | - | - | - |
+| goal-clarifier | - | - | ✅️ | - |
+| main-orchestrator | - | - | - | ✅️ |
+| task-scale-evaluator | - | - | ✅️ | - |
+| design-architect | - | - | ✅️ | - |
+| code-developer | - | ✅️ | ✅️ | - |
+| test-strategist | - | - | ✅️ | - |
+| test-executor | - | - | ✅️ | - |
+| test-failure-debugger | - | - | ✅️ | - |
+| quality-reviewer | - | - | ✅️ | - |
+| deliverable-evaluator | ✅️ | ✅️ | ✅️ | - |
+| workflow-orchestrator | - | - | ✅️ | - |
 
-### 2. プロジェクトを設定
+### スキルフック（設定読み込み）
 
-`CLAUDE.md`をプロジェクト固有のルールで編集:
-- ビジネスルールと制約
-- 禁止パターンとその理由
-- 品質ゲートと要件
+| Skill | SessionStart | PostToolUse | config.yaml キー |
+|-------|:------------:|:-----------:|-----------------|
+| generic/git-operator | ✅️ | - | `.output.language`, `.git` |
+| generic/test-implementer | ✅️ | - | `.testing`, `.constraints.testing` |
+| generic/task-scaler | ✅️ | - | `.task_scaling.thresholds` |
+| generic/code-reviewer | ✅️ | - | `.constraints` |
+| php/coding-standards | ✅️ | ✅️ | `.coding_standards` |
+| typescript/coding-standards | ✅️ | ✅️ | `.coding_standards` |
+| php-cakephp/test-validator | ✅️ | - | `.constraints.testing`, `.constraints.schema` |
+| php-cakephp/code-implementer | ✅️ | - | `.constraints.architecture` |
+| php-cakephp/code-reviewer | ✅️ | - | `.constraints.architecture`, `.constraints` |
 
-`.claude/config.yaml`を技術設定で編集:
-- 技術スタックの指定
-- エージェントスキルの割り当て
-- テストコマンドの設定
+**アーキテクチャ原則:**
+- **スキル**: `.claude/config.yaml`から`yq`経由でプロジェクト固有ルールを読み込み
+- **エージェント**: チェイン制御のみ（SubagentStop、Stop）- ルールベースフックなし
 
-### 3. Claude Codeの使用開始
+</details>
 
-main-orchestratorが自動的にリクエストを分類し、適切にルーティングします。
+<details>
+<summary><strong>スキル使用マトリクス（上級者向け）</strong></summary>
 
-## 設定
+| Agent | 使用スキル |
+|-------|-----------|
+| goal-clarifier | requirement-analyzer, acceptance-criteria |
+| main-orchestrator | workflow-patterns, task-scaler, delegation-router |
+| task-scale-evaluator | requirement-analyzer, task-scaler |
+| design-architect | design-patterns |
+| test-executor | test-implementer |
+| quality-reviewer | code-reviewer |
+| deliverable-evaluator | completion-evaluator, evaluation-criteria, deliverable-validator |
+| workflow-orchestrator | git-operator |
 
-設定は各プロジェクトの`.claude/config.yaml`で管理されます。
+言語/フレームワーク固有スキル（例: `php-cakephp/*`）はconfig.yamlの`agents.*.skills`でプロジェクトごとに設定します。
 
-**必須セクション:**
-1. `agents.*` - どのスキルがどのエージェントで使用されるか
-2. `skills.*` - スキル固有のカスタマイズルール
-3. `testing.*` - テスト実行設定
-4. `git.*` - Git操作設定
-
-```yaml
-# Agent-Skill 割り当て（技術スタックを暗黙的に定義）
-agents:
-  code-developer:
-    skills:
-      - php/coding-standards
-      - php-cakephp/code-implementer
-  quality-reviewer:
-    skills:
-      - generic/code-reviewer
-      - php-cakephp/test-validator
-
-# スキル固有の設定
-skills:
-  test-validator:
-    enabled: true
-    rules:
-      require_guarantee_section: true
-  code-reviewer:
-    focus_areas:
-      security: true
-      performance: true
-      maintainability: true
-    severity:
-      block_on: [critical, security]
-      warn_on: [minor]
-
-# Git設定
-git:
-  operations:
-    commit: auto          # auto|user_request_only|prohibited
-    push: user_request_only
-  commit_message:
-    format: conventional  # conventional|simple|custom
-
-# テスト設定
-testing:
-  command: "docker compose run --rm web vendor/bin/phpunit"
-  rules:
-    documentation: "tests/README.md"
-```
-
-### プロジェクト情報の配置場所
-
-| 情報 | 配置場所 |
-|------|----------|
-| Agent-Skill 割り当て | `.claude/config.yaml` |
-| スキルカスタマイズルール | `.claude/config.yaml` |
-| テストコマンド | `.claude/config.yaml` |
-| ビジネスルール、禁止パターン | `CLAUDE.md` |
-| プロジェクト固有のテストルール | `tests/README.md` |
-| 技術スタック、アーキテクチャ | `CLAUDE.md` |
-
-### スキルのロード順序
-
-スキルは優先順位に従ってロードされます（後のものが前のものをオーバーライド）:
-
-1. `generic/*` - ベースとなる汎用パターン
-2. `{language}/*` - 言語固有のパターン
-3. `{language}-{framework}/*` - フレームワーク固有のパターン
+</details>
 
 ## ライセンス
 
@@ -343,5 +379,5 @@ MIT License - 詳細は[LICENSE](LICENSE)ファイルを参照してください
 
 ---
 
-**バージョン**: 2.0.0
-**最終更新日**: 2025-01-11
+**バージョン**: 2.1.0
+**最終更新日**: 2025-01-12
