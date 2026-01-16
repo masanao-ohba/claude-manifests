@@ -5,11 +5,6 @@ tools: Read, Write, Edit, Grep, Glob, Bash
 model: inherit
 color: green
 hooks:
-  PreToolUse:
-    - matcher: "Write|Edit"
-      hooks:
-        - type: command
-          command: $HOME/.claude/scripts/hooks/verify-file-read.sh
   Stop:
     - hooks:
         - type: command
