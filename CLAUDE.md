@@ -13,7 +13,7 @@ These principles define what the orchestration system MUST achieve. All developm
 **Goal**: Tasks are delegated to agents with appropriate skills loaded from `.claude/config.yaml`.
 
 **Enforcement Mechanisms**:
-- Skills load project-specific rules via `SessionStart` hooks using `yq`
+- Project-specific rules loaded via `SessionStart` hooks in settings.json using `yq`
 - Agent-skill mapping is defined in project's `.claude/config.yaml` under `agents.<name>.skills`
 - Agents remain tech-stack agnostic; Skills adapt them to specific frameworks
 
@@ -72,27 +72,116 @@ Hooks are the PRIMARY mechanism for enforcing principles. Agent prompts are the 
 
 ### Available Hook Events
 
+**Agents/Skills (*.md files)** - Limited support:
+
 | Hook | Trigger | Use Case |
 |------|---------|----------|
 | `PreToolUse` | Before tool execution | Validate allowed operations |
 | `PostToolUse` | After tool execution | Update state, log progress |
-| `Stop` | Before main agent termination | Verify completion conditions |
+| `Stop` | Before agent termination | Verify completion conditions |
+
+**settings.json / settings.local.json only** - Full support:
+
+| Hook | Trigger | Use Case |
+|------|---------|----------|
 | `SubagentStop` | Before subagent termination | Verify subagent completion |
 | `SessionStart` | At session start | Load context, initialize state |
+| `UserPromptSubmit` | Before user prompt processing | Validate/transform user input |
 
 ### Hook Types
 
-| Type | Description | Supported Events |
-|------|-------------|------------------|
-| `type: command` | Executes shell script | All events |
-| `type: prompt` | LLM evaluates context | PreToolUse, Stop, SubagentStop, UserPromptSubmit |
+| Type | Where Supported | Description |
+|------|-----------------|-------------|
+| `type: command` | Agents/Skills, settings.json | Executes shell script |
+| `type: prompt` | settings.json only | LLM evaluates context |
 
-**Note**: Use `type: prompt` for intelligent, context-aware decisions. Use `type: command` for deterministic validation.
+**Note**: Agents/Skills support only `type: command`. Use `type: prompt` in settings.json for intelligent, context-aware decisions.
+
+### Hook Environment Variables
+
+Hooks receive context via environment variables. **Leverage these to maximize inter-agent collaboration.**
+
+| Variable | Available In | Description |
+|----------|--------------|-------------|
+| `TOOL_NAME` | PreToolUse, PostToolUse | Name of the tool being called |
+| `TOOL_INPUT` | PreToolUse, PostToolUse | JSON input to the tool |
+| `TOOL_OUTPUT` | PostToolUse | JSON output from the tool |
+| `CLAUDE_CONVERSATION` | All hooks | Full conversation context (JSON) |
+| `CLAUDE_FILE_PATHS` | All hooks | Files mentioned in conversation |
+
+**Inter-Agent Collaboration Examples:**
+
+```yaml
+# Extract subagent type and prompt for Task tool calls
+hooks:
+  PreToolUse:
+    - matcher: "Task"
+      hooks:
+        - type: command
+          command: |
+            # Parse Task tool input for orchestration decisions
+            SUBAGENT=$(echo "${TOOL_INPUT}" | jq -r '.subagent_type // empty')
+            PROMPT=$(echo "${TOOL_INPUT}" | jq -r '.prompt // empty')
+            DESCRIPTION=$(echo "${TOOL_INPUT}" | jq -r '.description // empty')
+
+            # Log agent invocation for workflow tracking
+            echo "[WORKFLOW] Calling ${SUBAGENT}: ${DESCRIPTION}" >> /tmp/agent-flow.log
+
+            # Validate agent chain order
+            LAST_AGENT=$(tail -1 /tmp/agent-chain.log 2>/dev/null || echo "")
+            echo "${SUBAGENT}" >> /tmp/agent-chain.log
+```
+
+```yaml
+# Capture agent results for downstream agents
+hooks:
+  PostToolUse:
+    - matcher: "Task"
+      hooks:
+        - type: command
+          command: |
+            # Store agent output for next agent in chain
+            SUBAGENT=$(echo "${TOOL_INPUT}" | jq -r '.subagent_type // empty')
+            echo "${TOOL_OUTPUT}" > /tmp/last-${SUBAGENT}-output.json
+
+            # Pass acceptance criteria between agents
+            if [ "${SUBAGENT}" = "goal-clarifier" ]; then
+              echo "${TOOL_OUTPUT}" | jq '.acceptance_criteria' > /tmp/acceptance-criteria.json
+            fi
+```
+
+```yaml
+# Validate completion with accumulated context
+hooks:
+  Stop:
+    - hooks:
+        - type: command
+          command: |
+            # Check if all required agents were called
+            REQUIRED="goal-clarifier code-developer test-executor deliverable-evaluator"
+            CALLED=$(cat /tmp/agent-chain.log 2>/dev/null | sort -u | tr '\n' ' ')
+
+            for agent in ${REQUIRED}; do
+              if ! echo "${CALLED}" | grep -qw "${agent}"; then
+                echo "ERROR: ${agent} was not called" >&2
+                exit 1
+              fi
+            done
+
+            # Verify final evaluation passed
+            VERDICT=$(cat /tmp/last-deliverable-evaluator-output.json | jq -r '.verdict // empty')
+            if [ "${VERDICT}" != "PASS" ]; then
+              echo "ERROR: Deliverable evaluation did not PASS" >&2
+              exit 1
+            fi
+```
 
 ### Hook Examples by Principle
 
-**Principle 2 (Autonomous Workflow) - PreToolUse validation:**
+**Agents/Skills (type: command only):**
+
 ```yaml
+# Principle 2 (Autonomous Workflow) - PreToolUse validation
 hooks:
   PreToolUse:
     - matcher: "Task"
@@ -107,21 +196,25 @@ hooks:
             fi
 ```
 
-**Principle 3 (Evaluation Loop) - SubagentStop validation:**
-```yaml
-hooks:
-  SubagentStop:
-    - hooks:
-        - type: prompt
-          once: true
-          prompt: |
-            Before completing, verify the MANDATORY chain was followed:
-            - [ ] code-developer - Implementation complete?
-            - [ ] test-executor - Tests executed and passing?
-            - [ ] quality-reviewer - Code quality reviewed?
-            - [ ] deliverable-evaluator - Evaluated against acceptance_criteria?
-            If ANY agent was skipped → respond {"ok": false, "reason": "..."}.
-            Otherwise → respond {"ok": true}.
+**settings.json only (type: prompt, SubagentStop, SessionStart):**
+
+```json
+// Principle 3 (Evaluation Loop) - SubagentStop validation
+{
+  "hooks": {
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "once": true,
+            "prompt": "Before completing, verify the MANDATORY chain was followed:\n- code-developer - Implementation complete?\n- test-executor - Tests executed and passing?\n- quality-reviewer - Code quality reviewed?\n- deliverable-evaluator - Evaluated against acceptance_criteria?\nIf ANY agent was skipped → respond {\"ok\": false, \"reason\": \"...\"}.\nOtherwise → respond {\"ok\": true}."
+          }
+        ]
+      }
+    ]
+  }
+}
 ```
 
 ---
@@ -201,19 +294,18 @@ hooks:
       hooks:
         - type: command
           command: validation-script.sh
-        - type: prompt
-          prompt: "Verify this action is necessary."
-  SubagentStop:
+  Stop:
     - hooks:
-        - type: prompt
-          once: true
-          prompt: |
-            Verify completion before returning:
-            1. Task completed successfully?
-            2. Output meets requirements?
-            Return summary.
+        - type: command
+          command: |
+            # Verify completion before allowing termination
+            echo "Agent completing task"
 ---
 ```
+
+**Supported hooks in Agents/Skills:**
+- `PreToolUse`, `PostToolUse`, `Stop` only
+- `type: command` only (no `type: prompt`)
 
 **Hook Placement Guidelines**:
 - **Agent hooks**: Control workflow behavior (completion verification, chain enforcement)
@@ -221,10 +313,10 @@ hooks:
 
 **Principles Applied**:
 - Each agent has a single, clear responsibility (Principle 2)
-- Use `type: prompt` for intelligent verification (Principle 3)
 - Use `type: command` for deterministic workflow control (Principle 2)
 - Agents do NOT load project rules - Skills do that (Principle 1)
 - Keep tool access minimal (principle of least privilege)
+- For `type: prompt` hooks, use settings.json instead
 
 ## Skill Development
 
@@ -235,19 +327,45 @@ Skills are defined in `skills/<category>/*.md`:
 name: skill-name
 description: Brief description
 hooks:
-  SessionStart:
-    - type: command
-      command: |
-        # Load config from .claude/config.yaml (Principle 1)
-        yq '.constraints.testing' .claude/config.yaml 2>/dev/null
+  PreToolUse:
+    - matcher: "Write"
+      hooks:
+        - type: command
+          command: |
+            # Validate file operations based on project rules
+            FILE_PATH=$(echo "${TOOL_INPUT:-{}}" | jq -r '.file_path // empty')
+            echo "Writing to: ${FILE_PATH}"
+  Stop:
+    - hooks:
+        - type: command
+          command: |
+            echo "Skill cleanup complete"
 ---
 ```
 
+**Supported hooks in Skills (same as Agents):**
+- `PreToolUse`, `PostToolUse`, `Stop` only
+- `type: command` only
+
+**For SessionStart hooks** (loading project config at session start), use settings.json:
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "yq '.constraints.testing' .claude/config.yaml 2>/dev/null"
+      }
+    ]
+  }
+}
+```
+
 **Principles Applied**:
-- Skills load project-specific rules via `yq` from `.claude/config.yaml` (Principle 1)
 - Skills are loaded per-agent via `agents.<name>.skills` in config (Principle 1)
 - Generic skills work across all tech stacks
 - Language-specific skills contain framework patterns
+- Project-specific config loading requires SessionStart in settings.json
 
 ## Command Development
 
