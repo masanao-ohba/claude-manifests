@@ -1,0 +1,91 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Workflow State",
+  "description": "State file for deterministic development workflow control",
+  "type": "object",
+  "required": ["session_id", "phase", "allowed_agents", "completed"],
+  "properties": {
+    "session_id": {
+      "type": "string",
+      "description": "Unique session identifier"
+    },
+    "phase": {
+      "type": "string",
+      "enum": [
+        "goal_definition",
+        "user_clarification",
+        "scale_evaluation",
+        "implementation",
+        "testing",
+        "quality_review",
+        "evaluation",
+        "complete",
+        "failed"
+      ],
+      "description": "Current workflow phase (dev-only: starts at goal_definition)"
+    },
+    "allowed_agents": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Agents that can be called in current phase"
+    },
+    "completed": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Agents that have been called"
+    },
+    "task": {
+      "type": ["object", "null"],
+      "description": "Task object from goal-clarifier",
+      "properties": {
+        "status": { "type": "string", "enum": ["clear", "needs_clarification"] },
+        "description": { "type": "string" },
+        "goals": { "type": "array", "items": { "type": "string" } },
+        "acceptance_criteria": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "criterion": { "type": "string" },
+              "verification": { "type": "string" },
+              "priority": { "type": "string", "enum": ["high", "medium", "low"] }
+            },
+            "required": ["criterion", "verification", "priority"]
+          }
+        },
+        "assumptions": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "scale": {
+      "type": ["object", "null"],
+      "description": "Scale evaluation from task-scale-evaluator",
+      "properties": {
+        "task_scale": { "type": "string", "enum": ["trivial", "small", "medium", "large"] },
+        "complexity_score": { "type": "number" },
+        "subtasks": { "type": "array" },
+        "parallel_groups": { "type": "array" }
+      }
+    },
+    "outputs": {
+      "type": "object",
+      "description": "Outputs from each agent",
+      "additionalProperties": true
+    },
+    "error": {
+      "type": ["string", "null"],
+      "description": "Error message if workflow failed"
+    },
+    "user_request": {
+      "type": "string",
+      "description": "Original user request"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}
