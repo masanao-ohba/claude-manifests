@@ -2,13 +2,16 @@
 name: code-reviewer
 description: Code review methodology, severity classification, and quality assessment patterns
 hooks:
-  SessionStart:
-    - type: command
-      command: |
-        if command -v yq &> /dev/null && [ -f ".claude/config.yaml" ]; then
-          echo "=== Project Constraints ==="
-          yq -o=json '.constraints' .claude/config.yaml 2>/dev/null || true
-        fi
+  PreToolUse:
+    - matcher: "Read|Grep|Glob"
+      hooks:
+        - type: command
+          once: true
+          command: |
+            if command -v yq &> /dev/null && [ -f ".claude/config.yaml" ]; then
+              echo "=== Project Constraints ==="
+              yq -o=json '.constraints' .claude/config.yaml 2>/dev/null || true
+            fi
 ---
 
 # Code Reviewer

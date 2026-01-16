@@ -2,15 +2,18 @@
 name: code-reviewer
 description: Reviews PHP/CakePHP code for quality, standards compliance, and best practices
 hooks:
-  SessionStart:
-    - type: command
-      command: |
-        if command -v yq &> /dev/null && [ -f ".claude/config.yaml" ]; then
-          echo "=== Architecture Constraints ==="
-          yq -o=json '.constraints.architecture' .claude/config.yaml 2>/dev/null || true
-          echo "=== All Constraints ==="
-          yq -o=json '.constraints' .claude/config.yaml 2>/dev/null || true
-        fi
+  PreToolUse:
+    - matcher: "Read|Grep|Glob"
+      hooks:
+        - type: command
+          once: true
+          command: |
+            if command -v yq &> /dev/null && [ -f ".claude/config.yaml" ]; then
+              echo "=== Architecture Constraints ==="
+              yq -o=json '.constraints.architecture' .claude/config.yaml 2>/dev/null || true
+              echo "=== All Constraints ==="
+              yq -o=json '.constraints' .claude/config.yaml 2>/dev/null || true
+            fi
 ---
 
 # PHP/CakePHP Code Reviewer

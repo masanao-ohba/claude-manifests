@@ -2,13 +2,16 @@
 name: coding-standards
 description: PHP coding standards (PSR-12, PHPDoc, type hints) for any PHP project
 hooks:
-  SessionStart:
-    - type: command
-      command: |
-        if command -v yq &> /dev/null && [ -f ".claude/config.yaml" ]; then
-          echo "=== PHP Coding Standards ==="
-          yq -o=json '.coding_standards' .claude/config.yaml 2>/dev/null || true
-        fi
+  PreToolUse:
+    - matcher: "Edit|Write|Read"
+      hooks:
+        - type: command
+          once: true
+          command: |
+            if command -v yq &> /dev/null && [ -f ".claude/config.yaml" ]; then
+              echo "=== PHP Coding Standards ==="
+              yq -o=json '.coding_standards' .claude/config.yaml 2>/dev/null || true
+            fi
   PostToolUse:
     - matcher: "Edit|Write"
       hooks:

@@ -2,13 +2,16 @@
 name: task-scaler
 description: Evaluates task complexity and determines appropriate scale classification for workflow optimization
 hooks:
-  SessionStart:
-    - type: command
-      command: |
-        if command -v yq &> /dev/null && [ -f ".claude/config.yaml" ]; then
-          echo "=== Scale Configuration ==="
-          yq -o=json '.task_scaling.thresholds' .claude/config.yaml 2>/dev/null || true
-        fi
+  PreToolUse:
+    - matcher: "Read|Grep|Glob"
+      hooks:
+        - type: command
+          once: true
+          command: |
+            if command -v yq &> /dev/null && [ -f ".claude/config.yaml" ]; then
+              echo "=== Scale Configuration ==="
+              yq -o=json '.task_scaling.thresholds' .claude/config.yaml 2>/dev/null || true
+            fi
 ---
 
 # Task Scaler
