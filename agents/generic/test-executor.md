@@ -4,6 +4,11 @@ description: Executes tests and analyzes results
 tools: Read, Bash, Grep
 model: inherit
 color: magenta
+hooks:
+  Stop:
+    - hooks:
+        - type: command
+          command: $HOME/.claude/scripts/hooks/agents/test-executor-stop.sh
 ---
 
 # Test Executor

@@ -4,6 +4,11 @@ description: Clarifies user intent and defines achievement goals
 tools: Read, Grep, Glob
 model: inherit
 color: yellow
+hooks:
+  Stop:
+    - hooks:
+        - type: command
+          command: $HOME/.claude/scripts/hooks/agents/goal-clarifier-stop.sh
 ---
 
 # Goal Clarifier

@@ -10,6 +10,10 @@ hooks:
       hooks:
         - type: command
           command: $HOME/.claude/scripts/hooks/verify-file-read.sh
+  Stop:
+    - hooks:
+        - type: command
+          command: $HOME/.claude/scripts/hooks/agents/code-developer-stop.sh
 ---
 
 # Code Developer

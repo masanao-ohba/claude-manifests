@@ -4,6 +4,11 @@ description: Reviews code quality using project standards and static analysis
 tools: Read, Grep, Glob, Bash
 model: inherit
 color: yellow
+hooks:
+  Stop:
+    - hooks:
+        - type: command
+          command: $HOME/.claude/scripts/hooks/agents/quality-reviewer-stop.sh
 ---
 
 # Quality Reviewer

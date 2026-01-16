@@ -17,6 +17,10 @@ hooks:
               exit 1
             fi
             exit 0
+  Stop:
+    - hooks:
+        - type: command
+          command: $HOME/.claude/scripts/hooks/agents/task-scale-evaluator-stop.sh
 ---
 
 # Task Scale Evaluator

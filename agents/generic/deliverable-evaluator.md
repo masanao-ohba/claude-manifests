@@ -4,6 +4,11 @@ description: Evaluates deliverables against acceptance criteria with PASS/FAIL v
 tools: Read, Grep, Glob
 model: inherit
 color: magenta
+hooks:
+  Stop:
+    - hooks:
+        - type: command
+          command: $HOME/.claude/scripts/hooks/agents/deliverable-evaluator-stop.sh
 ---
 
 # Deliverable Evaluator

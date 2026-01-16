@@ -1,0 +1,94 @@
+{
+  "$schema": "https://schema.claude.com/settings.json",
+  "_comment": "Project-level settings for Claude Code Agent Orchestration",
+
+  "hooks": {
+    "SubagentStop": [
+      {
+        "_comment": "Principle 3: Verify workflow-orchestrator completed mandatory chain",
+        "matcher": "workflow-orchestrator",
+        "hooks": [
+          {
+            "type": "prompt",
+            "once": true,
+            "prompt": "Before completing workflow-orchestrator, verify the MANDATORY chain was followed:\n\nRequired agents (in order):\n- [ ] code-developer - Implementation complete?\n- [ ] test-executor - Tests executed?\n- [ ] quality-reviewer - Code quality reviewed?\n- [ ] deliverable-evaluator - Evaluated against acceptance_criteria?\n\nIf ANY agent was skipped → respond {\"ok\": false, \"reason\": \"Missing agent: <name>\"}.\nIf all checks pass → respond {\"ok\": true} and return completion status with evaluation result (PASS/FAIL)."
+          }
+        ]
+      },
+      {
+        "_comment": "Principle 3: Verify goal-clarifier output quality",
+        "matcher": "goal-clarifier",
+        "hooks": [
+          {
+            "type": "prompt",
+            "once": true,
+            "prompt": "Verify goal clarity before returning:\n1. Are acceptance criteria SMART (Specific, Measurable, Achievable, Relevant)?\n2. Are there any remaining ambiguous requirements?\n3. Is the acceptance criteria measurable and verifiable?\n\nReturn the complete `task` object (including acceptance_criteria).\nThis task object will be passed through TSE → WO → DE unchanged."
+          }
+        ]
+      },
+      {
+        "_comment": "Principle 3: Verify deliverable-evaluator provides verdict",
+        "matcher": "deliverable-evaluator",
+        "hooks": [
+          {
+            "type": "prompt",
+            "once": true,
+            "prompt": "Final deliverable evaluation:\nFor EACH acceptance criterion:\n1. Was it achieved? (PASS/FAIL)\n2. What evidence supports this?\n\nOverall verdict: PASS (all high-priority pass) or FAIL (any high-priority fails)\n\nROUTING:\n- If PASS → Return to workflow-orchestrator (deliverable accepted)\n- If FAIL → Specify which agent should fix what\n\nReturn: verdict, criteria_results, recommendations."
+          }
+        ]
+      },
+      {
+        "_comment": "Verify code-developer task completion",
+        "matcher": "code-developer",
+        "hooks": [
+          {
+            "type": "prompt",
+            "once": true,
+            "prompt": "Verify code-developer task completion:\n1. All required functionality implemented?\n2. Code follows project patterns?\n3. No obvious bugs or issues?\n4. Tests updated/created if needed?\n\nReturn: files modified, key changes, any issues."
+          }
+        ]
+      },
+      {
+        "_comment": "Verify test-executor provides actionable results",
+        "matcher": "test-executor",
+        "hooks": [
+          {
+            "type": "prompt",
+            "once": true,
+            "prompt": "Analyze test execution results:\n1. How many tests passed/failed?\n2. What types of failures (ERROR vs FAILURE)?\n3. Should delegate to test-failure-debugger?\n\nReturn structured test results."
+          }
+        ]
+      },
+      {
+        "_comment": "Verify quality-reviewer provides comprehensive review",
+        "matcher": "quality-reviewer",
+        "hooks": [
+          {
+            "type": "prompt",
+            "once": true,
+            "prompt": "Verify review is comprehensive:\n1. All critical issues identified?\n2. Security vulnerabilities checked?\n3. Performance concerns noted?\n4. Actionable recommendations provided?\n\nReturn: status, issues by severity, quality score."
+          }
+        ]
+      },
+      {
+        "_comment": "Verify task-scale-evaluator calls WO",
+        "matcher": "task-scale-evaluator",
+        "hooks": [
+          {
+            "type": "prompt",
+            "once": true,
+            "prompt": "You have completed the scale evaluation.\n\nCRITICAL: You MUST call workflow-orchestrator using Task tool.\nPass the ENTIRE `task` object (from goal-clarifier) along with your evaluation.\nThe task object contains acceptance_criteria needed by deliverable-evaluator.\n\nIf you have NOT called workflow-orchestrator → respond {\"ok\": false, \"reason\": \"Must call WO\"}.\nOtherwise → respond {\"ok\": true}."
+          }
+        ]
+      }
+    ],
+
+    "SessionStart": [
+      {
+        "_comment": "Principle 1: Load project-specific configuration at session start",
+        "type": "command",
+        "command": "if [ -f .claude/config.yaml ]; then echo '--- Project Configuration ---'; cat .claude/config.yaml 2>/dev/null | head -50; fi"
+      }
+    ]
+  }
+}
