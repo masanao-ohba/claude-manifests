@@ -6,14 +6,15 @@ model: inherit
 color: red
 hooks:
   SubagentStop:
-    - type: prompt
-      once: true
-      prompt: |
-        Provide diagnosis report:
-        1. Error classification (ERROR vs FAILURE)
-        2. Root cause with evidence
-        3. Recommended fix location and approach
-        4. Verification steps
+    - hooks:
+        - type: prompt
+          once: true
+          prompt: |
+            Provide diagnosis report:
+            1. Error classification (ERROR vs FAILURE)
+            2. Root cause with evidence
+            3. Recommended fix location and approach
+            4. Verification steps
 ---
 
 # Test Failure Debugger

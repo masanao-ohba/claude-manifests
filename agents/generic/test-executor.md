@@ -6,14 +6,15 @@ model: inherit
 color: magenta
 hooks:
   SubagentStop:
-    - type: prompt
-      once: true
-      prompt: |
-        Analyze test execution results:
-        1. How many tests passed/failed?
-        2. What types of failures (ERROR vs FAILURE)?
-        3. Should delegate to test-debugger?
-        Return structured test results.
+    - hooks:
+        - type: prompt
+          once: true
+          prompt: |
+            Analyze test execution results:
+            1. How many tests passed/failed?
+            2. What types of failures (ERROR vs FAILURE)?
+            3. Should delegate to test-failure-debugger?
+            Return structured test results.
 ---
 
 # Test Executor
@@ -56,7 +57,7 @@ Executes test suites and analyzes results for next actions.
 2. Capture output
 3. Parse results
 4. Categorize failures
-5. Return structured analysis (SubagentStop hook)
+5. Return structured analysis
 ```
 
 ## Result Analysis

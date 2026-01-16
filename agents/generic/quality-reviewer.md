@@ -6,15 +6,16 @@ model: inherit
 color: yellow
 hooks:
   SubagentStop:
-    - type: prompt
-      once: true
-      prompt: |
-        Verify review is comprehensive:
-        1. All critical issues identified?
-        2. Security vulnerabilities checked?
-        3. Performance concerns noted?
-        4. Actionable recommendations provided?
-        Return: status, issues by severity, quality score.
+    - hooks:
+        - type: prompt
+          once: true
+          prompt: |
+            Verify review is comprehensive:
+            1. All critical issues identified?
+            2. Security vulnerabilities checked?
+            3. Performance concerns noted?
+            4. Actionable recommendations provided?
+            Return: status, issues by severity, quality score.
 ---
 
 # Quality Reviewer

@@ -6,15 +6,16 @@ model: inherit
 color: magenta
 hooks:
   SubagentStop:
-    - type: prompt
-      once: true
-      prompt: |
-        Summarize architecture design:
-        1. Key components and their responsibilities
-        2. Database entities and relationships
-        3. API endpoints (if applicable)
-        4. Critical design decisions with rationale
-        Format as structured YAML for code-developer.
+    - hooks:
+        - type: prompt
+          once: true
+          prompt: |
+            Summarize architecture design:
+            1. Key components and their responsibilities
+            2. Database entities and relationships
+            3. API endpoints (if applicable)
+            4. Critical design decisions with rationale
+            Format as structured YAML for code-developer.
 ---
 
 # Design Architect
