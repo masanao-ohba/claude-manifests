@@ -4,18 +4,6 @@ description: Reviews code quality using project standards and static analysis
 tools: Read, Grep, Glob, Bash
 model: inherit
 color: yellow
-hooks:
-  SubagentStop:
-    - hooks:
-        - type: prompt
-          once: true
-          prompt: |
-            Verify review is comprehensive:
-            1. All critical issues identified?
-            2. Security vulnerabilities checked?
-            3. Performance concerns noted?
-            4. Actionable recommendations provided?
-            Return: status, issues by severity, quality score.
 ---
 
 # Quality Reviewer

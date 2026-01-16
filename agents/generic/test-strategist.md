@@ -4,17 +4,6 @@ description: Plans comprehensive test strategies for any project using skill-dri
 tools: Read, Write, Grep, Glob
 model: inherit
 color: cyan
-hooks:
-  SubagentStop:
-    - hooks:
-        - type: prompt
-          once: true
-          prompt: |
-            Summarize test strategy:
-            1. Test levels and coverage goals
-            2. Key test cases (prioritized)
-            3. Test data requirements
-            4. Test commands to execute
 ---
 
 # Test Strategist

@@ -4,19 +4,6 @@ description: Clarifies user intent and defines achievement goals
 tools: Read, Grep, Glob
 model: inherit
 color: yellow
-hooks:
-  SubagentStop:
-    - hooks:
-        - type: prompt
-          once: true
-          prompt: |
-            Verify goal clarity before returning:
-            1. Are acceptance criteria SMART (Specific, Measurable, Achievable, Relevant)?
-            2. Are there any remaining ambiguous requirements?
-            3. Is the acceptance criteria measurable and verifiable?
-
-            Return the complete `task` object (including acceptance_criteria).
-            This task object will be passed through TSE → WO → DE unchanged.
 ---
 
 # Goal Clarifier

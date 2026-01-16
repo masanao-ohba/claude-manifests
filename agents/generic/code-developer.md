@@ -8,25 +8,8 @@ hooks:
   PreToolUse:
     - matcher: "Write|Edit"
       hooks:
-        - type: prompt
-          prompt: |
-            Before modifying code, verify:
-            1. Have I read the existing file? If not, BLOCK and read first.
-            2. Is this change necessary for the current task?
-            3. Is this the minimal change needed?
-            If any check fails, respond {"ok": false, "reason": "<why>"}.
-            Otherwise respond {"ok": true}.
-  SubagentStop:
-    - hooks:
-        - type: prompt
-          once: true
-          prompt: |
-            Verify code-developer task completion:
-            1. All required functionality implemented?
-            2. Code follows project patterns?
-            3. No obvious bugs or issues?
-            4. Tests updated/created if needed?
-            Return: files modified, key changes, any issues.
+        - type: command
+          command: $HOME/.claude/scripts/hooks/verify-file-read.sh
 ---
 
 # Code Developer

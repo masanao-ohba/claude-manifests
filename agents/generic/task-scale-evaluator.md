@@ -17,19 +17,6 @@ hooks:
               exit 1
             fi
             exit 0
-  SubagentStop:
-    - hooks:
-        - type: prompt
-          once: true
-          prompt: |
-            You have completed the scale evaluation.
-
-            Call workflow-orchestrator using Task tool.
-            CRITICAL: Pass the ENTIRE `task` object (from goal-clarifier) along with your evaluation.
-            The task object contains acceptance_criteria needed by deliverable-evaluator.
-
-            If you have NOT called workflow-orchestrator → respond {"ok": false, "reason": "Must call WO"}.
-            Otherwise → respond {"ok": true}.
 ---
 
 # Task Scale Evaluator

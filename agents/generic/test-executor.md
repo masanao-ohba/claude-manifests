@@ -4,17 +4,6 @@ description: Executes tests and analyzes results
 tools: Read, Bash, Grep
 model: inherit
 color: magenta
-hooks:
-  SubagentStop:
-    - hooks:
-        - type: prompt
-          once: true
-          prompt: |
-            Analyze test execution results:
-            1. How many tests passed/failed?
-            2. What types of failures (ERROR vs FAILURE)?
-            3. Should delegate to test-failure-debugger?
-            Return structured test results.
 ---
 
 # Test Executor

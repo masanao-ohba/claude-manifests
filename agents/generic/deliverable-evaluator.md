@@ -4,35 +4,6 @@ description: Evaluates deliverables against acceptance criteria with PASS/FAIL v
 tools: Read, Grep, Glob
 model: inherit
 color: magenta
-hooks:
-  SessionStart:
-    - hooks:
-        - type: prompt
-          prompt: |
-            Load evaluation context from the PROMPT (provided by workflow-orchestrator):
-            1. Extract the `task` object from the prompt
-            2. Extract `task.acceptance_criteria` for evaluation
-            3. Extract evidence (implementation_summary, test_results, quality_review)
-            4. List all criteria to evaluate
-            5. Prepare evaluation checklist
-            Note: All criteria are in `task.acceptance_criteria` within the prompt.
-  SubagentStop:
-    - hooks:
-        - type: prompt
-          once: true
-          prompt: |
-            Final deliverable evaluation:
-            For EACH acceptance criterion:
-            1. Was it achieved? (PASS/FAIL)
-            2. What evidence supports this?
-
-            Overall verdict: PASS (all high-priority pass) or FAIL (any high-priority fails)
-
-            ROUTING:
-            - If PASS → Return to workflow-orchestrator (deliverable accepted)
-            - If FAIL → Specify which agent should fix what
-
-            Return: verdict, criteria_results, recommendations.
 ---
 
 # Deliverable Evaluator

@@ -19,14 +19,6 @@ hooks:
     - hooks:
         - type: command
           command: $HOME/.claude/scripts/workflow/validate-completion.sh
-        - type: prompt
-          once: true
-          prompt: |
-            Before completing, verify:
-            1. All delegated tasks completed successfully?
-            2. User's original request fully addressed?
-            3. Final results clearly summarized?
-            Return completion summary for user.
 ---
 
 # Main Orchestrator

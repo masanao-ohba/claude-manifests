@@ -18,25 +18,6 @@ hooks:
               exit 1
             fi
             exit 0
-  SubagentStop:
-    - hooks:
-        - type: prompt
-          once: true
-          prompt: |
-            Before completing, verify the MANDATORY chain was followed:
-
-            Required agents (in order):
-            - [ ] code-developer - Implementation complete?
-            - [ ] test-executor - Tests executed and passing?
-            - [ ] quality-reviewer - Code quality reviewed?
-            - [ ] deliverable-evaluator - Evaluated against acceptance_criteria?
-
-            If ANY agent was skipped → respond {"ok": false, "reason": "Missing agent: <name>"}.
-
-            Only after ALL checks pass:
-            - Return completion status
-            - Report evaluation result (PASS/FAIL)
-            - Respond {"ok": true}
 ---
 
 # Workflow Orchestrator
