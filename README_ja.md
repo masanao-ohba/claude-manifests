@@ -150,6 +150,7 @@ JWT認証でユーザー認証機能を実装してください。
 agents:
   code-developer:
     skills:
+      - generic/safe-editing
       - php/coding-standards
       - php-cakephp/code-implementer
 
@@ -170,6 +171,8 @@ git:
     commit: user_request_only
     push: user_request_only
 ```
+
+`generic/safe-editing` はWrite/Editを使う可能性のあるエージェントにデフォルトで付与し、安全な編集手順（差分確認や影響範囲の明示など）を標準化する意図で運用します。
 
 ### 情報の配置場所
 
@@ -247,6 +250,20 @@ flowchart TD
 
 **`/dev-workflow`なしの場合**: Claude Codeは直接実行モードで動作し、すべてのツールにアクセスできます。
 
+### 原則5: 並列処理
+
+`task-scale-evaluator` が `evaluation.parallel_groups` を返した場合、`workflow-orchestrator` は **同一グループ内のサブタスクを並列実行** します。具体的には、各 `parallel_group` に含まれるサブタスクごとに Task 呼び出しを並列ディスパッチし、全ての結果が揃ってから次のグループへ進みます。これにより、独立した作業を同時進行しつつ、グループ間の依存関係は維持できます。
+
+例:
+```yaml
+parallel_groups:
+  - ["1", "3"]
+  - ["2"]
+```
+
+- グループ1（`1` と `3`）は同時に Task を実行
+- グループ2（`2`）はグループ1完了後に実行
+
 ### 主要エージェント
 
 | エージェント | 役割 |
@@ -281,9 +298,9 @@ flowchart TD
 </details>
 
 <details>
-<summary><strong>スキル一覧（37スキル）</strong></summary>
+<summary><strong>スキル一覧（38スキル）</strong></summary>
 
-### 汎用スキル (12)
+### 汎用スキル (13)
 
 | Skill | 説明 |
 |-------|------|
@@ -296,6 +313,7 @@ flowchart TD
 | evaluation-criteria | 最終評価基準 |
 | git-operator | Git操作パターン |
 | requirement-analyzer | 要件分析パターン |
+| safe-editing | 影響範囲の確認と安全な編集手順 |
 | task-scaler | タスク複雑性評価 |
 | test-implementer | テスト実装パターン |
 | workflow-patterns | ワークフロー調整パターン |
@@ -384,7 +402,9 @@ flowchart TD
 | goal-clarifier | requirement-analyzer, acceptance-criteria |
 | main-orchestrator | workflow-patterns, task-scaler, delegation-router |
 | task-scale-evaluator | requirement-analyzer, task-scaler |
-| design-architect | design-patterns |
+| design-architect | design-patterns, safe-editing |
+| code-developer | safe-editing |
+| test-strategist | safe-editing |
 | test-executor | test-implementer |
 | quality-reviewer | code-reviewer |
 | deliverable-evaluator | completion-evaluator, evaluation-criteria, deliverable-validator |

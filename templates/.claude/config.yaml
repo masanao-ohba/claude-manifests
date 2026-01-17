@@ -72,6 +72,7 @@ agents:
 
   design-architect:
     skills:
+      - generic/safe-editing
       - generic/software-designer
       # Add language/framework specific skills:
       # - php/architectural-patterns
@@ -79,6 +80,7 @@ agents:
 
   test-strategist:
     skills:
+      - generic/safe-editing
       - generic/test-planner
       # Add language/framework specific skills:
       # - php/testing-standards
@@ -86,6 +88,7 @@ agents:
 
   code-developer:
     skills:
+      - generic/safe-editing
       - generic/code-implementer
       # Add language/framework specific skills:
       # - php/coding-standards

@@ -54,6 +54,24 @@ Execute these agents IN ORDER:
 
 ## EXECUTION PROTOCOL
 
+### Parallel Groups (Principle 5)
+
+If the task object includes `evaluation.parallel_groups`, you must execute Task calls in parallel **within the same group**.
+
+**How to run parallel groups:**
+1. Read `evaluation.subtasks` and `evaluation.parallel_groups` from the task object.
+2. For each `parallel_group` (array of subtask IDs):
+   - Dispatch one **Task call per subtask** in the group **in parallel** (use the platform’s parallel tool invocation).
+   - Include `subtask_id` and `parallel_group` in each Task description/prompt so outputs are traceable.
+   - Wait for all parallel Task results in the group, then proceed.
+3. After all groups are complete, continue the mandatory chain (tests, review, evaluation).
+
+**Parallel execution evidence (required when `parallel_groups` exist):**
+- In your final output, include:
+  - `parallel_execution: true`
+  - `parallel_groups_executed: [...]` (list of groups/subtask IDs)
+  - `parallel_trace: "<brief evidence string>"` (e.g., `group-1:[1,3] executed in parallel`)
+
 ### Step 1: Call code-developer
 
 ```
@@ -132,6 +150,17 @@ workflow_result:
     implementation_summary: "<summary>"
     test_results: "<summary>"
     quality_review: "<summary>"
+    - agent: "deliverable-evaluator"
+      status: completed
+  evaluation:
+    verdict: PASS | FAIL
+    criteria_results:
+      - criterion: "<criterion>"
+        result: PASS | FAIL
+  parallel_execution: true | false
+  parallel_groups_executed:
+    - ["<subtask_id>", "<subtask_id>"]
+  parallel_trace: "<brief evidence string>"
   iterations: <number of retry loops>
 ```
 
