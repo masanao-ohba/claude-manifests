@@ -11,7 +11,7 @@ hooks:
         - type: command
           command: |
             # WO can only call implementation chain agents
-            ALLOWED="code-developer test-executor quality-reviewer deliverable-evaluator design-architect test-failure-debugger"
+            ALLOWED="code-developer test-executor quality-reviewer design-architect test-failure-debugger"
             REQUESTED=$(echo "${TOOL_INPUT:-{}}" | jq -r '.subagent_type // empty')
             if ! echo "${ALLOWED}" | grep -qw "${REQUESTED}"; then
               echo "BLOCKED: WO can only call implementation agents, not ${REQUESTED}" >&2
@@ -38,7 +38,7 @@ Coordinates the implementation chain. Delegates ONLY via Task tool.
 | Write files | Delegate to code-developer |
 | Run tests | Delegate to test-executor |
 | Review code | Delegate to quality-reviewer |
-| Evaluate deliverables | Delegate to deliverable-evaluator |
+| Evaluate deliverables | Main-orchestrator handles deliverable-evaluator |
 
 ## MANDATORY EXECUTION CHAIN
 
@@ -48,7 +48,6 @@ Execute these agents IN ORDER:
 1. code-developer      → Implementation
 2. test-executor       → Run tests
 3. quality-reviewer    → Code review
-4. deliverable-evaluator → Verify acceptance criteria
 ```
 
 **DO NOT SKIP ANY STEP.**
@@ -111,34 +110,9 @@ Task tool:
     Report any issues found.
 ```
 
-### Step 4: Call deliverable-evaluator
+### Step 4: Handoff to main-orchestrator
 
-```
-Task tool:
-  subagent_type: "deliverable-evaluator"
-  description: "Evaluate deliverables"
-  prompt: |
-    Evaluate the implementation against acceptance criteria.
-
-    ## Task Object
-    [INSERT COMPLETE TASK OBJECT WITH ACCEPTANCE CRITERIA]
-
-    ## Implementation Summary
-    [INSERT CODE-DEVELOPER OUTPUT]
-
-    ## Test Results
-    [INSERT TEST-EXECUTOR OUTPUT]
-
-    ## Quality Review
-    [INSERT QUALITY-REVIEWER OUTPUT]
-
-    Return verdict: PASS or FAIL with details.
-```
-
-**IF verdict is FAIL:**
-- Analyze which criteria failed
-- Call code-developer with specific fix instructions
-- Repeat the chain from Step 1
+Provide the implementation summary, test results, and quality review so the main-orchestrator can call deliverable-evaluator.
 
 ## OUTPUT FORMAT
 
@@ -154,13 +128,10 @@ workflow_result:
       status: completed
     - agent: "quality-reviewer"
       status: completed
-    - agent: "deliverable-evaluator"
-      status: completed
-  evaluation:
-    verdict: PASS | FAIL
-    criteria_results:
-      - criterion: "<criterion>"
-        result: PASS | FAIL
+  handoff:
+    implementation_summary: "<summary>"
+    test_results: "<summary>"
+    quality_review: "<summary>"
   iterations: <number of retry loops>
 ```
 
@@ -168,7 +139,7 @@ workflow_result:
 
 | Rule | Description |
 |------|-------------|
-| Call all 4 agents | Every step is mandatory |
+| Call all 3 agents | Every step is mandatory |
 | Sequential execution | Must complete in order |
 | Retry on failure | Loop until PASS or max iterations |
-| Pass task object to DE | Include acceptance_criteria |
+| Prepare DE inputs | Provide summaries for deliverable-evaluator |
