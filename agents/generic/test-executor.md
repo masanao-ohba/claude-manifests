@@ -5,6 +5,12 @@ tools: Read, Bash, Grep
 model: inherit
 color: magenta
 hooks:
+  PreToolUse:
+    - matcher: "Read|Grep|Bash"
+      hooks:
+        - type: command
+          once: true
+          command: $HOME/.claude/scripts/hooks/load-config-context.sh test-executor
   Stop:
     - hooks:
         - type: command

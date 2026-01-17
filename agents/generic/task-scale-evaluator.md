@@ -6,6 +6,11 @@ model: inherit
 color: cyan
 hooks:
   PreToolUse:
+    - matcher: "Read|Grep|Glob|Task"
+      hooks:
+        - type: command
+          once: true
+          command: $HOME/.claude/scripts/hooks/load-config-context.sh task-scale-evaluator
     - matcher: "Task"
       hooks:
         - type: command

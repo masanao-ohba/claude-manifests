@@ -5,6 +5,12 @@ tools: Read, Grep, Glob, Bash
 model: inherit
 color: yellow
 hooks:
+  PreToolUse:
+    - matcher: "Read|Grep|Glob|Bash"
+      hooks:
+        - type: command
+          once: true
+          command: $HOME/.claude/scripts/hooks/load-config-context.sh quality-reviewer
   Stop:
     - hooks:
         - type: command

@@ -6,6 +6,8 @@
 set -euo pipefail
 
 AGENT_NAME="${1:-unknown}"
+CONTEXT_SCOPE="${CONTEXT_SCOPE:-agent}"
+SKILL_CONFIG_KEYS="${SKILL_CONFIG_KEYS:-}"
 WORKFLOW_DIR="${TMPDIR:-/tmp}/claude-workflow"
 CURRENT_SESSION_FILE="${WORKFLOW_DIR}/current-session"
 PROJECT_CONFIG=".claude/config.yaml"
@@ -15,6 +17,14 @@ load_skills() {
     local agent="$1"
 
     if [[ ! -f "${PROJECT_CONFIG}" ]]; then
+        return
+    fi
+
+    if ! command -v yq &> /dev/null; then
+        echo "## Loaded Skills"
+        echo ""
+        echo "(yq not available; unable to load skills from ${PROJECT_CONFIG})"
+        echo ""
         return
     fi
 
@@ -101,6 +111,14 @@ load_constraints() {
         return
     fi
 
+    if ! command -v yq &> /dev/null; then
+        echo "## Project Constraints"
+        echo ""
+        echo "(yq not available; unable to load constraints from ${PROJECT_CONFIG})"
+        echo ""
+        return
+    fi
+
     local constraints
     constraints=$(yq -r '.constraints // null' "${PROJECT_CONFIG}" 2>/dev/null)
 
@@ -114,6 +132,41 @@ load_constraints() {
     fi
 }
 
+# Function to load skill-specific config keys
+load_skill_config() {
+    if [[ ! -f "${PROJECT_CONFIG}" ]]; then
+        return
+    fi
+
+    if ! command -v yq &> /dev/null; then
+        echo "## Skill Configuration"
+        echo ""
+        echo "(yq not available; unable to load skill config from ${PROJECT_CONFIG})"
+        echo ""
+        return
+    fi
+
+    if [[ -z "${SKILL_CONFIG_KEYS}" ]]; then
+        return
+    fi
+
+    echo "## Skill Configuration"
+    echo ""
+
+    IFS=',' read -r -a keys <<< "${SKILL_CONFIG_KEYS}"
+    for key in "${keys[@]}"; do
+        local trimmed
+        trimmed=$(echo "${key}" | xargs)
+        if [[ -n "${trimmed}" ]]; then
+            echo "### ${trimmed}"
+            echo '```yaml'
+            yq -P "${trimmed}" "${PROJECT_CONFIG}" 2>/dev/null || true
+            echo '```'
+            echo ""
+        fi
+    done
+}
+
 # Main output
 echo "# Agent Context: ${AGENT_NAME}"
 echo ""
@@ -122,7 +175,11 @@ echo ""
 
 load_workflow_state
 load_skills "${AGENT_NAME}"
-load_constraints
+
+if [[ "${CONTEXT_SCOPE}" == "skill" ]]; then
+    load_skill_config
+    load_constraints
+fi
 
 echo "---"
 echo ""

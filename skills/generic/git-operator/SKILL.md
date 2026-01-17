@@ -7,12 +7,7 @@ hooks:
       hooks:
         - type: command
           once: true
-          command: |
-            if command -v yq &> /dev/null && [ -f ".claude/config.yaml" ]; then
-              echo "=== Git Configuration ==="
-              yq -o=json '.output.language' .claude/config.yaml 2>/dev/null || true
-              yq -o=json '.git' .claude/config.yaml 2>/dev/null || true
-            fi
+          command: $HOME/.claude/scripts/hooks/load-config-context.sh git-operator skill ".output.language,.git"
 ---
 
 # Generic Git Operator

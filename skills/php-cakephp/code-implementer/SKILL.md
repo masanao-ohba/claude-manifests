@@ -7,13 +7,7 @@ hooks:
       hooks:
         - type: command
           once: true
-          command: |
-            if command -v yq &> /dev/null && [ -f ".claude/config.yaml" ]; then
-              echo "=== Architecture Constraints ==="
-              yq -o=json '.constraints.architecture' .claude/config.yaml 2>/dev/null || true
-              echo "=== Coding Standards ==="
-              yq -o=json '.coding_standards' .claude/config.yaml 2>/dev/null || true
-            fi
+          command: $HOME/.claude/scripts/hooks/load-config-context.sh php-cakephp-code-implementer skill ".constraints.architecture,.coding_standards"
 ---
 
 # Code Implementer

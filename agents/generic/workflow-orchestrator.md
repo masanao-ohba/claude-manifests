@@ -9,6 +9,11 @@ hooks:
     - matcher: "Task"
       hooks:
         - type: command
+          once: true
+          command: $HOME/.claude/scripts/hooks/load-config-context.sh workflow-orchestrator
+    - matcher: "Task"
+      hooks:
+        - type: command
           command: |
             # WO can only call implementation chain agents
             ALLOWED="code-developer test-executor quality-reviewer deliverable-evaluator design-architect test-failure-debugger"
