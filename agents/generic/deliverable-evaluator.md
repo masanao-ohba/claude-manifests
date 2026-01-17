@@ -5,6 +5,12 @@ tools: Read, Grep, Glob
 model: inherit
 color: magenta
 hooks:
+  PreToolUse:
+    - matcher: "Read|Grep|Glob"
+      hooks:
+        - type: command
+          once: true
+          command: $HOME/.claude/scripts/hooks/load-config-context.sh deliverable-evaluator
   Stop:
     - hooks:
         - type: command

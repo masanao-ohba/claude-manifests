@@ -180,6 +180,11 @@ git:
 | Test commands | `.claude/config.yaml` | Yes |
 | Business rules with code examples | `CLAUDE.md` (optional) | No |
 
+**Config loading behavior (without settings.json):**
+- Agents invoke a PreToolUse hook to read `.claude/config.yaml` and load **agent↔skill mappings**.
+- Skill-specific customization values in `.claude/config.yaml` are read by **skill hooks** when that skill runs, using the same loader with `scope=skill`.
+- If `.claude/config.yaml` or `yq` is missing, the hook logs a warning and continues without blocking.
+
 ## Architecture Overview
 
 The orchestration system is invoked via the `/dev-workflow` command. This triggers the `main-orchestrator` agent which coordinates the workflow below.

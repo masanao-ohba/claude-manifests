@@ -4,6 +4,13 @@ description: Plans comprehensive test strategies for any project using skill-dri
 tools: Read, Write, Grep, Glob
 model: inherit
 color: cyan
+hooks:
+  PreToolUse:
+    - matcher: "Read|Write|Grep|Glob"
+      hooks:
+        - type: command
+          once: true
+          command: $HOME/.claude/scripts/hooks/load-config-context.sh test-strategist
 ---
 
 # Test Strategist

@@ -6,6 +6,11 @@ model: inherit
 color: blue
 hooks:
   PreToolUse:
+    - matcher: "Task|AskUserQuestion"
+      hooks:
+        - type: command
+          once: true
+          command: $HOME/.claude/scripts/hooks/load-config-context.sh main-orchestrator
     - matcher: "Task"
       hooks:
         - type: command

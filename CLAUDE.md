@@ -13,9 +13,13 @@ These principles define what the orchestration system MUST achieve. All developm
 **Goal**: Tasks are delegated to agents with appropriate skills loaded from `.claude/config.yaml`.
 
 **Enforcement Mechanisms**:
-- Project-specific rules loaded via `SessionStart` hooks in settings.json using `yq`
+- Agent `PreToolUse` hooks load **agent↔skill mapping** from `.claude/config.yaml` (using `yq` when available)
+- Skill customization values are loaded by **skill hooks** when the skill runs (via the shared load-config-context hook with `scope=skill`)
 - Agent-skill mapping is defined in project's `.claude/config.yaml` under `agents.<name>.skills`
 - Agents remain tech-stack agnostic; Skills adapt them to specific frameworks
+
+**Missing config handling**:
+- If `.claude/config.yaml` or `yq` is unavailable, hooks log a warning and continue without blocking
 
 **Verification**: Agent receives skill-injected context before processing any task.
 

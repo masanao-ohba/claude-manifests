@@ -4,6 +4,13 @@ description: Systematically debugs test failures using evidence-based root cause
 tools: Read, Grep, Glob, Bash, Task
 model: inherit
 color: red
+hooks:
+  PreToolUse:
+    - matcher: "Read|Grep|Glob|Bash|Task"
+      hooks:
+        - type: command
+          once: true
+          command: $HOME/.claude/scripts/hooks/load-config-context.sh test-failure-debugger
 ---
 
 # Test Failure Debugger

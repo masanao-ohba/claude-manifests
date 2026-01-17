@@ -5,6 +5,12 @@ tools: Read, Write, Edit, Grep, Glob, Bash
 model: inherit
 color: green
 hooks:
+  PreToolUse:
+    - matcher: "Read|Write|Edit|Grep|Glob|Bash"
+      hooks:
+        - type: command
+          once: true
+          command: $HOME/.claude/scripts/hooks/load-config-context.sh code-developer
   Stop:
     - hooks:
         - type: command

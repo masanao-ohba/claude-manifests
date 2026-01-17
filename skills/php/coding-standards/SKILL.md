@@ -7,11 +7,7 @@ hooks:
       hooks:
         - type: command
           once: true
-          command: |
-            if command -v yq &> /dev/null && [ -f ".claude/config.yaml" ]; then
-              echo "=== PHP Coding Standards ==="
-              yq -o=json '.coding_standards' .claude/config.yaml 2>/dev/null || true
-            fi
+          command: $HOME/.claude/scripts/hooks/load-config-context.sh php-coding-standards skill ".coding_standards"
   PostToolUse:
     - matcher: "Edit|Write"
       hooks:

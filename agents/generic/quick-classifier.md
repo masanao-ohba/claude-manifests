@@ -4,6 +4,13 @@ description: Phase 1 pattern-based request classification
 tools: Read
 model: haiku
 color: white
+hooks:
+  PreToolUse:
+    - matcher: "Read"
+      hooks:
+        - type: command
+          once: true
+          command: $HOME/.claude/scripts/hooks/load-config-context.sh quick-classifier
 ---
 
 # Quick Classifier

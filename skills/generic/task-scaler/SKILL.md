@@ -7,11 +7,7 @@ hooks:
       hooks:
         - type: command
           once: true
-          command: |
-            if command -v yq &> /dev/null && [ -f ".claude/config.yaml" ]; then
-              echo "=== Scale Configuration ==="
-              yq -o=json '.task_scaling.thresholds' .claude/config.yaml 2>/dev/null || true
-            fi
+          command: $HOME/.claude/scripts/hooks/load-config-context.sh task-scaler skill ".task_scaling.thresholds"
 ---
 
 # Task Scaler

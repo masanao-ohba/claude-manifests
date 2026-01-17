@@ -4,6 +4,13 @@ description: Designs software architecture using project conventions and pattern
 tools: Read, Write, Grep, Glob, WebSearch
 model: inherit
 color: magenta
+hooks:
+  PreToolUse:
+    - matcher: "Read|Write|Grep|Glob|WebSearch"
+      hooks:
+        - type: command
+          once: true
+          command: $HOME/.claude/scripts/hooks/load-config-context.sh design-architect
 ---
 
 # Design Architect

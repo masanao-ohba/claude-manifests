@@ -183,6 +183,11 @@ git:
 | テストコマンド | `.claude/config.yaml` | Yes |
 | コード例付きのビジネスルール | `CLAUDE.md` (オプション) | No |
 
+**config 読み込みの挙動（settings.json を使わない場合）:**
+- エージェントは PreToolUse フックで `.claude/config.yaml` を読み込み、**エージェント↔スキルのマッピング**をロードします。
+- スキルのカスタマイズ値は、該当スキルの **フック実行時** に `.claude/config.yaml` から読み込み、同一ローダーを `scope=skill` で利用します。
+- `.claude/config.yaml` または `yq` が見つからない場合は警告を出し、処理は継続します。
+
 ## アーキテクチャ概要
 
 オーケストレーションシステムは `/dev-workflow` コマンドで起動します。これにより `main-orchestrator` エージェントが以下のワークフローを調整します。
