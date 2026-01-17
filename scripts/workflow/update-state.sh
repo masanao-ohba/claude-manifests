@@ -90,8 +90,8 @@ case "${CALLED_AGENT}" in
         ;;
 
     "workflow-orchestrator")
-        # WO manages its own chain internally
-        # When WO completes, move to evaluation
+        # WO manages implementation chain; evaluation happens via main-orchestrator
+        # When WO completes, move to evaluation (deliverable-evaluator)
         jq --arg now "${NOW}" \
            '.phase = "evaluation" |
             .allowed_agents = ["deliverable-evaluator"] |

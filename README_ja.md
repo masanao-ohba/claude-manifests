@@ -233,7 +233,7 @@ flowchart TD
     style Report fill:#f3e5f5,stroke:#7b1fa2
 ```
 
-**データフロー**: `task`オブジェクト（`acceptance_criteria`を含む）がGC → TSE → WO → DEへprompt経由で流れます。
+**データフロー**: `task`オブジェクト（`acceptance_criteria`を含む）がGC → TSE → WOへ渡され、WO完了後にmain-orchestratorがDEを呼び出します。
 
 ### 動作の仕組み
 
@@ -242,8 +242,8 @@ flowchart TD
 1. **エントリー**: リクエストが`main-orchestrator`エージェントに送られる
 2. **分類**: `quick-classifier`がリクエストが単純か複雑かを判定
 3. **トリアージ**: 単純なタスクは直接実行、複雑なものは`goal-clarifier`（`acceptance_criteria`を含む`task`を定義）を経由
-4. **実装**: `task-scale-evaluator`が`task`オブジェクトを`workflow-orchestrator`に渡し、`code-developer` → `test-executor`を管理
-5. **品質**: `quality-reviewer`がコードをチェック、`deliverable-evaluator`が`task`から`acceptance_criteria`を抽出して検証
+4. **実装**: `task-scale-evaluator`が`task`オブジェクトを`workflow-orchestrator`に渡し、`code-developer` → `test-executor` → `quality-reviewer`を管理
+5. **品質**: `workflow-orchestrator`の結果を受けて、main-orchestratorが`deliverable-evaluator`を呼び出し`acceptance_criteria`を検証
 6. **報告**: 結果があなたに返される
 
 **注意**: `goal-clarifier`がユーザー入力を必要とする場合、質問を`main-orchestrator`に返し、MOがユーザーに質問してGCを再開します。
